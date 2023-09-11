@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" style="height: 100vh">
     <Dashboard/>
   </div>
 </template>
@@ -11,7 +11,6 @@ export default {
   name: 'App',
   components: {
     Dashboard,
-
   }
 }
 </script>

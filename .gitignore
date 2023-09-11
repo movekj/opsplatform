@@ -1,0 +1,6 @@
+env/
+.idea/
+
+frontend/dist
+frontend/node_modules
+*.pyc

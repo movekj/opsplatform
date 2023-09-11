@@ -34,6 +34,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'users',
     'hosts',
@@ -45,6 +46,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'opsplatform.urls'
+
 
 TEMPLATES = [
     {

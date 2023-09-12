@@ -36,7 +36,7 @@ class RoleRule(models.Model):
 
 
 class RoleRuleVerb(models.Model):
-    Role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    RoleRule = models.ForeignKey(RoleRule, on_delete=models.CASCADE, null=True)
     Verb = models.ForeignKey(Verb, on_delete=models.CASCADE)
 
     def __str__(self):

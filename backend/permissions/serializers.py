@@ -6,9 +6,15 @@ class RoleSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
-class ResourcecSerializer(serializers.Serializer):
+class ResourceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     type = serializers.CharField()
     ref = serializers.CharField()
+
+
+class VerbSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
 

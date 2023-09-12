@@ -28,3 +28,16 @@ class ModifyResourceForm(Form):
 
 class DeleteResourceForm(Form):
     id = CharField(required=True, error_messages={'required': '角色ID不能为空'})
+
+
+class AddVerbForm(Form):
+    name = CharField(required=True, error_messages={'required': '请输入动作名'})
+
+
+class ModifyVerbForm(Form):
+    name = CharField(required=True, error_messages={'required': '请输入动作名'})
+    id = CharField(required=True, error_messages={'required': '动作ID不能为空'})
+
+
+class DeleteVerbForm(Form):
+    id = CharField(required=True, error_messages={'required': '动作ID不能为空'})

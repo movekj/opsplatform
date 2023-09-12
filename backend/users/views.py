@@ -5,6 +5,9 @@ import utils
 from . import serializers as user_serializers
 from rest_framework.views import APIView
 from users import models as users_models
+from permissions import models as permissions_models
+from permissions import serializers as permissions_serializers
+
 from django.http.response import JsonResponse
 from rest_framework_jwt.settings import api_settings
 
@@ -116,4 +119,49 @@ class UserLogin(APIView):
             else:
                 return JsonResponse(dict(code=400, message="用户名或密码错误"))
         return JsonResponse(dict(code=200, error=form.errors))
+
+
+class UserRoleBinding(APIView):
+    def post(self, request):
+        user_id = request.data.get('id')
+        role_ids = request.data.get('roleIds')
+
+        errors = dict()
+        if not user_id:
+            errors['id'] = 'id不能为空'
+            return JsonResponse(dict(code=400, errors=errors))
+
+        user = None
+        if user_id:
+            user = users_models.User.objects.filter(id=user_id).first()
+
+        if not user:
+            return JsonResponse(dict(code=400, message="用户[%s]不存在" % user_id))
+
+        roles = permissions_models.Role.objects.filter(id__in=role_ids)
+        user_role_bindings = list()
+        for role in roles:
+            if not permissions_models.UserRoleBinding.objects.filter(Role=role, User=user).exists():
+                user_role_binding = permissions_models.UserRoleBinding(
+                    User=user,
+                    Role=role
+                )
+                user_role_bindings.append(user_role_binding)
+        permissions_models.UserRoleBinding.objects.bulk_create(user_role_bindings)
+        return JsonResponse(dict(code=200, data='ok'))
+
+    def delete(self, request):
+        user_id = request.data.get('id')
+        role_id = request.data.get('roleId')
+        errors = dict()
+        if not user_id:
+            errors['id'] = 'id不能为空'
+            return JsonResponse(dict(code=400, errors=errors))
+
+        if not role_id:
+            errors['roleId'] = '角色不能为空'
+            return JsonResponse(dict(code=400, errors=errors))
+
+        permissions_models.UserRoleBinding.objects.filter(User__id=user_id, Role__id=role_id).delete()
+        return JsonResponse(dict(code=200, data='ok'))
 

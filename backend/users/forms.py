@@ -12,3 +12,16 @@ class AddUserForm(Form):
     phone = CharField(required=False)
     cname = CharField(required=True, error_messages={'required': '请输入中文名'})
 
+
+class ModifyUserForm(Form):
+    id = CharField(required=True, error_messages={'required': 'id不能为空'})
+    username = CharField()
+    email = EmailField()
+    phone = CharField()
+    cname = CharField()
+
+
+class UserLoginForm(Form):
+    username = CharField(required=True, error_messages={'required': 'id不能为空'})
+    password = CharField(required=True, error_messages={'required': 'id不能为空'})
+

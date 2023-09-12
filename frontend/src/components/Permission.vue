@@ -1,6 +1,20 @@
 <template>
-  <div>
-    Permission
+  <div style="display: flex; justify-content: left">
+    <el-menu
+      default-active="/permissionManage/role"
+      router
+    >
+      <el-menu-item index="/permissionManage/role">
+        <span slot="title">角色</span>
+      </el-menu-item>
+      <el-menu-item index="/permissionManage/resource" >
+        <span slot="title">资源</span>
+      </el-menu-item>
+      <el-menu-item index="/permissionManage/verb">
+        <span slot="title">动作</span>
+      </el-menu-item>
+    </el-menu>
+    <router-view></router-view>
   </div>
 </template>
 <script>
@@ -24,5 +38,14 @@ li {
 }
 a {
   color: #42b983;
+}
+.el-menu {
+  width: 160px;
+  padding-right: 10px;
+  height: calc(100vh - 60px);
+
+}
+.el-menu-item {
+  width: 100%;
 }
 </style>

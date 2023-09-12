@@ -90,6 +90,7 @@
   </div>
 </template>
 <script>
+import http from "@/api"
 export default {
   name: 'UserCp',
   data(){
@@ -162,8 +163,8 @@ export default {
   },
   methods:{
     getUsers(){
-      this.axios.get('/api/v1/users/').then(resp => {
-        this.users = resp.data.data
+      http.get('/api/v1/users/').then(resp => {
+        this.users = resp.data
       })
     },
     deleteUser(user){
@@ -172,7 +173,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.axios.delete('/api/v1/users/', {data: {id: user.id}}).then(()=>{
+        http.delete('/api/v1/users/', {data: {id: user.id}}).then(()=>{
           this.getUsers()
           this.$message({
             type: 'success',
@@ -189,16 +190,16 @@ export default {
     },
     openEditUserDialog(user){
       this.dialogType = 'edit'
-      this.axios.get('/api/v1/users/', {params: {id: user.id}}).then(resp => {
+      http.get('/api/v1/users/', {params: {id: user.id}}).then(resp => {
         this.emptyuserForm = Object.assign({}, this.userForm)
-        this.userForm = Object.assign({}, resp.data.data)
+        this.userForm = Object.assign({}, resp.data)
         this.userDialogVisible = true
       })
     },
     editUser(){
       this.$refs["userFormRef"].validate((valid)=>{
         if (valid){
-          this.axios.put('/api/v1/users/', this.userForm).then(() => {
+          http.put('/api/v1/users/', this.userForm).then(() => {
             this.getUsers()
             this.userForm = Object.assign({}, this.emptyuserForm)
             this.userDialogVisible = false
@@ -211,7 +212,7 @@ export default {
     addUser(){
       this.$refs["userFormRef"].validate((valid)=>{
         if (valid){
-          this.axios.post('/api/v1/users/', this.userForm).then(() => {
+          http.post('/api/v1/users/', this.userForm).then(() => {
             this.getUsers()
             this.userForm = Object.assign({}, this.emptyuserForm)
             this.userDialogVisible = false

@@ -15,6 +15,7 @@
       <el-menu-item index="/userManage">用户管理</el-menu-item>
     </el-menu>
     <router-view></router-view>
+
   </div>
 </template>
 <script>
@@ -22,11 +23,15 @@ export default {
   name: 'DashboardCp',
   data () {
     return {
-      activeIndex: '/stree'
+      activeIndex: '/stree',
+
     }
   },
-  props: {
-    msg: String
+  methods: {
+    openLoginDialog(){
+      this.loginDialogVisible = true
+    },
+
   }
 }
 </script>
@@ -46,5 +51,8 @@ li {
 }
 a {
   color: #42b983;
+  
 }
+
+
 </style>

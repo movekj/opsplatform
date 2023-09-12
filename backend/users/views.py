@@ -2,20 +2,28 @@ from django.shortcuts import render
 
 from . import forms
 import utils
+from . import serializers as user_serializers
 from rest_framework.views import APIView
 from users import models as users_models
 from django.http.response import JsonResponse
+from rest_framework_jwt.settings import api_settings
+
 
 # Create your views here.
 
 class Users(APIView):
     def get(self, request):
-        users_models.User.objects.all()
-        return JsonResponse(dict(code=200, data='ok'))
+        user_id = request.GET.get("id")
+
+        if user_id:
+            user = users_models.User.objects.filter(id=user_id).first()
+            return JsonResponse(dict(code=200, data=user_serializers.UserSerializer(user).data))
+
+        users = users_models.User.objects.all()
+        return JsonResponse(dict(code=200, data=user_serializers.UserSerializer(users, many=True).data))
 
     def post(self, request):
         form = forms.AddUserForm(request.data)
-
         if form.is_valid():
             clean_data = form.clean()
             username = clean_data.get('username')
@@ -42,10 +50,70 @@ class Users(APIView):
                 phone=phone,
                 cname=cname
             )
+            return JsonResponse(dict(code=200, data='ok'))
+
         else:
             return JsonResponse(dict(code=400, errors=form.errors))
+
+    def put(self, request):
+        form = forms.ModifyUserForm(request.data)
+        if form.is_valid():
+            clean_data = form.clean()
+            _id = clean_data.get('id')
+            user = users_models.User.objects.filter(id=_id).first()
+            if not user:
+                return JsonResponse(dict(code=400, message="用户id[%s]不存在" % _id))
+
+            username = clean_data.get('username')
+            email = clean_data.get('email')
+            phone = clean_data.get('phone')
+            cname = clean_data.get('cname')
+
+            if username:
+                user.username = username
+
+            if email:
+                user.email = email
+
+            if phone:
+                user.phone = phone
+
+            if cname:
+                user.cname = cname
+
+            user.save()
+        return JsonResponse(dict(code=200, data='ok'))
+
+    def delete(self, request):
+        user_id = request.data.get('id')
+        if not user_id:
+            return JsonResponse(dict(code=400, message="id不能为空"))
+
+        user = None
+        if user_id:
+            user = users_models.User.objects.filter(id=user_id).first()
+
+        if not user:
+            return JsonResponse(dict(code=400, message="用户[%s]不存在" % user_id))
+        user.delete()
         return JsonResponse(dict(code=200, data='ok'))
 
 
-
+class UserLogin(APIView):
+    def post(self, request):
+        form = forms.UserLoginForm(request.data)
+        if form.is_valid():
+            clean_data = form.clean()
+            username = clean_data.get('username')
+            password = clean_data.get('password')
+            user = users_models.User.objects.filter(username=username).first()
+            if not user:
+                return JsonResponse(dict(code=400, message="用户名或密码错误"))
+            if utils.get_user_password_hash(password, user.salt) == user.password:
+                payload = api_settings.JWT_PAYLOAD_HANDLER(user)
+                token = api_settings.JWT_ENCODE_HANDLER(payload)
+                return JsonResponse(dict(code=200, data=dict(token=token)))
+            else:
+                return JsonResponse(dict(code=400, message="用户名或密码错误"))
+        return JsonResponse(dict(code=200, error=form.errors))
 

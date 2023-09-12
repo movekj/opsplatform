@@ -20,5 +20,7 @@ from permissions import views
 
 
 urlpatterns = [
-    path('role/', views.Role.as_view())
+    path('role/', views.Role.as_view()),
+    path('resource/', views.Resource.as_view())
+
 ]

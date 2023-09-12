@@ -11,7 +11,7 @@
     >
       <el-menu-item index="/stree">服务树</el-menu-item>
       <el-menu-item index="/hostManage">主机管理</el-menu-item>
-      <el-menu-item index="/permissionManage">权限管理</el-menu-item>
+      <el-menu-item index="/permissionManage/role">权限管理</el-menu-item>
       <el-menu-item index="/userManage">用户管理</el-menu-item>
     </el-menu>
     <router-view></router-view>

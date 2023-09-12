@@ -10,7 +10,7 @@
           >添加</el-button>
         </div>
       </div>
-      <el-table :data="roles">
+      <el-table :data="roles" @row-click="handleRowClick">
         <el-table-column label="名称" prop="name">
         </el-table-column>
         <el-table-column
@@ -123,6 +123,13 @@ export default {
       this.roleForm =  Object.assign({}, role)
       this.opType = 'edit'
       this.roleDialogVisible = true
+    },
+    handleRowClick(row){
+      this.$router.push({
+        path:'/permissionManage/role/rule',
+        query:{
+          id: row.id
+        }})
     },
     handleRole(){
       if (this.opType === 'add'){

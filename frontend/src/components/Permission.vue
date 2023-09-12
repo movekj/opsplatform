@@ -14,7 +14,10 @@
         <span slot="title">动作</span>
       </el-menu-item>
     </el-menu>
-    <router-view></router-view>
+    <div style="padding: 20px; width: 100%">
+
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script>

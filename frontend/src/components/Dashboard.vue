@@ -9,10 +9,11 @@
         mode="horizontal"
         router
     >
-      <el-menu-item index="/stree">服务树</el-menu-item>
-      <el-menu-item index="/hostManage">主机管理</el-menu-item>
-      <el-menu-item index="/permissionManage/role">权限管理</el-menu-item>
-      <el-menu-item index="/userManage">用户管理</el-menu-item>
+
+      <el-menu-item index="/stree" v-if='HasPerm($store.state.rbac, [{ref:"module.stree",verb:"read"}])'>服务树</el-menu-item>
+      <el-menu-item index="/hostManage" v-if='HasPerm($store.state.rbac, [{ref:"module.hosts",verb:"read"}])'>主机管理</el-menu-item>
+      <el-menu-item index="/permissionManage/role" v-if='HasPerm($store.state.rbac, [{ref:"module.permissions",verb:"read"}])'>权限管理</el-menu-item>
+      <el-menu-item index="/userManage" v-if='HasPerm($store.state.rbac, [{ref:"module.users",verb:"read"}])'>用户管理</el-menu-item>
       <el-button type="text" style="float: right;margin-right: 20px;margin-top: 10px"
          @click="handleLoginOut"
       >退出登录</el-button>
@@ -23,6 +24,7 @@
 </template>
 <script>
 import utils from "@/utils";
+import http from "@/api"
 export default {
   name: 'DashboardCp',
   data () {
@@ -30,7 +32,13 @@ export default {
       activeIndex: '/stree',
     }
   },
+  mounted(){
+    http.get("/api/v1/users/info/").then((resp)=>{
+      this.$store.commit('commitUserinfo', resp.data)
+    })
+  },
   methods: {
+    HasPerm: utils.HasPerm,
     handleLoginOut(){
       this.$confirm('确定退出登录？', '提示', {
         confirmButtonText: '确定',

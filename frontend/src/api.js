@@ -47,6 +47,7 @@ http.interceptors.response.use(
         type: 'error',
         duration: 5 * 1000
       })
+      return Promise.resolve(err);
     }
     if (err.response.status === 401){
       router.push({name: 'login'})

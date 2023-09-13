@@ -1,3 +1,4 @@
+import utils from "@/utils";
 import VueRouter from 'vue-router'
 import Host from './components/Host.vue'
 import User from './components/User.vue'
@@ -10,7 +11,8 @@ import RoleRule from "@/components/RoleRule.vue";
 import Resource from "@/components/Resource.vue";
 import Dashboard from './components/Dashboard.vue'
 import Permission from './components/Permission.vue'
-import utils from "@/utils";
+
+
 
 const routes = [
   { path: '/', component: Dashboard,
@@ -40,13 +42,14 @@ const router = new VueRouter({
   routes
 })
 router.beforeEach((to, from, next) =>{
+    let token = utils.GetToken2LocalStorage()
     if (to.meta.requireLogin === undefined && !to.meta.requireLogin){
-      let token = utils.GetToken2LocalStorage()
       if (token.length < 10){
         router.push('/login')
         return
       }
     }
+
     next()
   }
 )

@@ -88,7 +88,7 @@ export default {
       roleRuleForm: {
         resourceId: '',
         verbIds: [],
-        roleId: this.$route.query.id
+        roleId: ''
       },
       roleRuleFormRule:{
         resourceId: [
@@ -180,6 +180,7 @@ export default {
 
     },
     handleAddRoleRule(){
+      this.roleRuleForm.roleId = this.$route.query.id
       this.$refs['roleRuleFormRef'].validate((valid)=>{
         if (valid){
           http.post("/api/v1/permissions/role/rule/", this.roleRuleForm).then(()=>{

@@ -1,10 +1,11 @@
 import Vue from 'vue'
-import App from './App.vue'
 import axios from 'axios'
+import store from '@/store'
+import App from './App.vue'
 import router from "@/router";
-import ElementUI from 'element-ui';
-import VueRouter from 'vue-router'
 import VueAxios from 'vue-axios'
+import VueRouter from 'vue-router'
+import ElementUI from 'element-ui';
 
 import 'element-ui/lib/theme-chalk/index.css';
 
@@ -20,7 +21,10 @@ Vue.use(VueAxios, axios)
 Vue.use(ElementUI);
 Vue.use(VueRouter);
 
+
+
 new Vue({
   render: h => h(App),
-  router
+  router,
+  store
 }).$mount('#app')

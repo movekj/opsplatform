@@ -104,6 +104,14 @@ export default {
       resourceOptions: []
     }
   },
+  watch:{
+    "$route.query.id": {
+      handler(){
+        this.getRoleRules()
+      },
+      immediate:true
+    }
+  },
   mounted() {
     this.getRoleRules()
   },

@@ -3,6 +3,7 @@ from django.shortcuts import render
 import utils
 from . import forms
 from config import Config
+from utils import with_rbac_perms
 from users import models as users_models
 from rest_framework.views import APIView
 from datetime import datetime, timedelta
@@ -15,6 +16,7 @@ from rest_framework_jwt.settings import api_settings
 # Create your views here.
 
 class Users(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="get"), dict(ref="module.users", verb="read")])
     def get(self, request):
         user_id = request.GET.get("id")
 
@@ -25,6 +27,7 @@ class Users(APIView):
         users = users_models.User.objects.all()
         return JsonResponse(dict(code=200, data=user_serializers.UserSerializer(users, many=True).data))
 
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="get"), dict(ref="module.users", verb="write")])
     def post(self, request):
         form = forms.AddUserForm(request.data)
         if form.is_valid():
@@ -58,6 +61,7 @@ class Users(APIView):
         else:
             return JsonResponse(dict(code=400, errors=form.errors))
 
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="put"), dict(ref="module.users", verb="write")])
     def put(self, request):
         form = forms.ModifyUserForm(request.data)
         if form.is_valid():
@@ -87,6 +91,7 @@ class Users(APIView):
             user.save()
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="delete"), dict(ref="module.users", verb="write")])
     def delete(self, request):
         user_id = request.data.get('id')
         if not user_id:

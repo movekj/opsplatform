@@ -10,7 +10,9 @@
           >添加</el-button>
         </div>
       </div>
-      <el-table :data="users"
+      <el-table
+        :data="users"
+        border
         style="width: 100%"
       >
         <el-table-column
@@ -33,7 +35,25 @@
           label="邮箱"
         >
         </el-table-column>
+        <el-table-column
+          prop="role"
+          label="角色"
+        >
+          <template slot-scope="scope">
+            <el-tag
+              closable
+              @close="handleDeleteUserRoleBinding(scope.row, role)"
+              :key="role.id"
+              v-for="role in scope.row.roles"
+              style="margin-top: 4px"
+              >{{ role.name }}</el-tag>
+            <el-button type="text"
+              icon="el-icon-plus"
+              @click="userRoleBindingDialogVisible = true;userRoleBindingFrom.id=scope.row.id">
 
+            </el-button>
+          </template>
+        </el-table-column>
         <el-table-column
           fixed="right"
           label="操作"
@@ -55,6 +75,7 @@
         </el-table-column>
       </el-table>
     </el-card>
+
     <el-dialog
       :title="dialogTypeMap[dialogType]"
       :visible.sync="userDialogVisible"
@@ -87,10 +108,31 @@
           <el-button type="primary" @click="handleUser">确 定</el-button>
         </span>
     </el-dialog>
+    <el-dialog
+      title="绑定角色"
+      :visible.sync="userRoleBindingDialogVisible" @open="getRoleOptions">
+      <el-form :model="userRoleBindingFrom" ref="userRoleBindingFormRef">
+        <el-form-item>
+        <el-select v-model="userRoleBindingFrom.roleIds" multiple>
+          <el-option :key="option.id"
+                     style="width: 100%; overflow: hidden"
+                     :label="option.name"
+                     :value="option.id"
+                     v-for="option in roleOptions">
+          </el-option>
+        </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="userRoleBindingDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleUserRoleBinding">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
 import http from "@/api"
+
 export default {
   name: 'UserCp',
   data(){
@@ -145,6 +187,12 @@ export default {
           { required: true, message: '请输入中文名', trigger: 'blur' }
         ],
       },
+      userRoleBindingFrom:{
+        roleIds: [],
+        id: ''
+      },
+      userRoleBindingDialogVisible: false,
+      roleOptions:[],
       dialogType: '',
       dialogTypeMap: {
         add: '添加用户',
@@ -165,6 +213,11 @@ export default {
     getUsers(){
       http.get('/api/v1/users/').then(resp => {
         this.users = resp.data
+      })
+    },
+    getRoleOptions(){
+      http.get('/api/v1/permissions/role/').then((resp)=>{
+        this.roleOptions = resp.data
       })
     },
     deleteUser(user){
@@ -229,6 +282,38 @@ export default {
       if (this.dialogType === 'add'){
         this.addUser()
       }
+    },
+    handleUserRoleBinding(){
+      this.$refs['userRoleBindingFormRef'].validate((valid) =>{
+        if (valid){
+            http.post('/api/v1/users/role/binding/', this.userRoleBindingFrom).then(() => {
+              this.userRoleBindingDialogVisible = false
+              this.getUsers()
+          })
+        }
+      })
+    },
+    handleDeleteUserRoleBinding(user, role){
+     this.$confirm('此操作将永久角色解除绑定['+ role.name + '], 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+     }).then(() => {
+        http.delete('/api/v1/users/role/binding/', {
+          data: {roleId: role.id, id: user.id}
+        }).then(()=>{
+          this.getUsers()
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        });
+      });
     },
     openAddUserDialog(){
       this.dialogType = 'add'

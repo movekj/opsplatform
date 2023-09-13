@@ -1,14 +1,14 @@
 from django.shortcuts import render
 
-from . import forms
 import utils
-from . import serializers as user_serializers
-from rest_framework.views import APIView
+from . import forms
+from config import Config
 from users import models as users_models
-from permissions import models as permissions_models
-from permissions import serializers as permissions_serializers
-
+from rest_framework.views import APIView
+from datetime import datetime, timedelta
+from . import serializers as user_serializers
 from django.http.response import JsonResponse
+from permissions import models as permissions_models
 from rest_framework_jwt.settings import api_settings
 
 
@@ -114,6 +114,7 @@ class UserLogin(APIView):
                 return JsonResponse(dict(code=400, message="用户名或密码错误"))
             if utils.get_user_password_hash(password, user.salt) == user.password:
                 payload = api_settings.JWT_PAYLOAD_HANDLER(user)
+                payload['exp'] = datetime.utcnow() + timedelta(days=Config.TOKEN_EXPIRE_DAYS)
                 token = api_settings.JWT_ENCODE_HANDLER(payload)
                 return JsonResponse(dict(code=200, data=dict(token=token)))
             else:

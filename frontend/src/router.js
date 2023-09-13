@@ -32,7 +32,7 @@ const routes = [
     ]
   },
   {
-    path: '/login', component: Login, meta: { requireLogin: false }
+    path: '/login', component: Login, meta: { requireLogin: false }, name: 'login'
   }
 ]
 

@@ -113,10 +113,6 @@ export default {
           message: '已取消删除'
         });
       });
-      http.put('/api/v1/permissions/role/',  this.roleForm).then(()=>{
-        this.getRoles()
-        this.roleDialogVisible = false
-      })
     },
     openEditRoleDialog(role){
       this.emptyRoleForm = Object.assign({}, this.roleForm)

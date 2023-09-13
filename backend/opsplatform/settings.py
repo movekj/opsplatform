@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'middleware.JwtAuthMiddleware'
 ]
 
 ROOT_URLCONF = 'opsplatform.urls'

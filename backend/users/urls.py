@@ -22,7 +22,5 @@ from users import views
 urlpatterns = [
     path('', views.Users.as_view()),
     path('role/binding/', views.UserRoleBinding.as_view()),
-
     path('login/', views.UserLogin.as_view())
-
 ]

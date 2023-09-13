@@ -4,6 +4,9 @@ let utils = {
   },
   GetToken2LocalStorage() {
     return localStorage.getItem("token") || ""
+  },
+  DeleteToken2LocalStorage() {
+    return localStorage.removeItem("token")
   }
 }
 

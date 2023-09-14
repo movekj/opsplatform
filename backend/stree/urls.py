@@ -15,14 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.urls import path
-from permissions import views
+from django.urls import path, re_path
+from stree import views
 
 
 urlpatterns = [
-    path('role/', views.Role.as_view()),
-    path('resource/', views.Resource.as_view()),
-    path('verb/', views.Verb.as_view()),
-    path('role/rule/', views.RoleRule.as_view()),
-    path('role/rule/verb/', views.RoleRuleVerb.as_view())
+    path('init/', views.Init.as_view()),
+    re_path(r'^children(/)?(?P<tree_id>\d+)?$', views.Children.as_view()),
+    path('children/move', views.ChildrenMove.as_view()),
+    path('node/detail', views.TreeNodeDetail.as_view()),
+    path('node/perm', views.TreeNodePerm.as_view()),
 ]

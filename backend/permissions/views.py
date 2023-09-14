@@ -195,7 +195,7 @@ class RoleRule(APIView):
             errors['roleId'] = "角色不能为空"
             return JsonResponse(dict(code=400, errors=errors))
 
-        role = permissions_models.Role.objects.filter(id=resource_id).first()
+        role = permissions_models.Role.objects.filter(id=role_id).first()
         if not role:
             errors['roleId'] = "角色[%s]不存在" % role_id
             return JsonResponse(dict(code=400, errors=errors))

@@ -18,6 +18,7 @@ from django.urls import include, path
 
 urlpatterns = [
    path('api/v1/users/', include('users.urls')),
-   path('api/v1/permissions/', include('permissions.urls'))
+   path('api/v1/permissions/', include('permissions.urls')),
+   path('api/v1/stree/', include('stree.urls'))
 
 ]

@@ -171,3 +171,8 @@ class UserRoleBinding(APIView):
         permissions_models.UserRoleBinding.objects.filter(User__id=user_id, Role__id=role_id).delete()
         return JsonResponse(dict(code=200, data='ok'))
 
+
+class UserInfo(APIView):
+    def get(self, request):
+        user = request.USER
+        return JsonResponse(dict(code=200, data=user_serializers.UserInfoWithRbacSerializer(user).data))

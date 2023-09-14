@@ -3,6 +3,7 @@ import random
 import hashlib
 from django.http.response import JsonResponse
 from permissions import models as permissions_models
+from stree import models as tree_models
 
 def generate_random_string(length=20):
     return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
@@ -33,8 +34,13 @@ def with_rbac_perms(perms=None):
                     has_perm = True
                     continue
             if not has_perm:
-                return JsonResponse(data=dict(code=403, msg='没有权限'), status=403)
+                return JsonResponse(data=dict(code=403, error='没有权限'), status=403)
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def get_parent_tree_node(path):
+    parent_path = '.'.join(path.split(".")[:-1])
+    return tree_models.TreeNode.objects.filter(path=parent_path).first()
 

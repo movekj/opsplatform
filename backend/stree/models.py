@@ -13,9 +13,14 @@ class TreeNode(models.Model):
     def __str__(self):
         return self.path + " (" + self.typ + ")"
 
+    @property
+    def parent_path(self):
+        return '.'.join(self.path.split('.')[:-1])
+
 
 class TreeRole(models.Model):
     name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, null=True)
 
     def __str__(self):
         return self.name

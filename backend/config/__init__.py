@@ -9,4 +9,4 @@ class Config(object):
     MYSQL_UNIX_SOCKET = ""
     TOKEN_EXPIRE_DAYS = 7
     AUTH_WHITE_LIST = ['/api/v1/users/login/']
-
+    NAME_REGEX = "[-_\u4e00-\u9fa5A-Za-z0-9]+"

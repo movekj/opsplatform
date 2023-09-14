@@ -40,7 +40,7 @@ class RoleRuleVerb(models.Model):
     Verb = models.ForeignKey(Verb, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.Role.name + "-" + self.Verb.name
+        return self.RoleRule.Role.name + "-" + self.Verb.name
 
 
 class UserRoleBinding(models.Model):

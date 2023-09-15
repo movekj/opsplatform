@@ -10,6 +10,7 @@ from users import models as users_models
 from django.http.response import JsonResponse
 from django.db import transaction
 import utils
+from django.db.models import Q
 
 
 class Init(APIView):
@@ -17,7 +18,6 @@ class Init(APIView):
         stree_nodes = stree_models.TreeNode.objects.filter(
             path__regex="^%s\.%s$" % (Config.NAME_REGEX, Config.NAME_REGEX)
         )
-        print(stree_nodes)
         return JsonResponse(dict(data=self.init_tree_node(stree_nodes)))
 
     def init_tree_node(self, tree_nodes):
@@ -58,17 +58,93 @@ class Init(APIView):
 
 
 class Children(APIView):
+
+    def parent_tree_node_path__eq__has_perm_tree_node_paths(
+        self, has_perm_tree_node_paths, parent_tree_node_path
+    ):
+        for has_perm_tree_node_path in has_perm_tree_node_paths:
+            if (
+                has_perm_tree_node_path.startswith(parent_tree_node_path)
+                and parent_tree_node_path == has_perm_tree_node_path
+            ):
+                return True
+        return False
+
+    def parent_tree_node_path__gt__has_perm_tree_node_paths(
+        self, has_perm_tree_node_paths, parent_tree_node_path
+    ):
+        for has_perm_tree_node_path in has_perm_tree_node_paths:
+            if (
+                parent_tree_node_path.startswith(has_perm_tree_node_path)
+                and parent_tree_node_path > has_perm_tree_node_path
+            ):
+                return True
+        return False
+
+    def parent_tree_node_path__lt__has_perm_tree_node_paths(
+        self, has_perm_tree_node_paths, parent_tree_node_path
+    ):
+        for has_perm_tree_node_path in has_perm_tree_node_paths:
+            if (
+                has_perm_tree_node_path.startswith(parent_tree_node_path)
+                and parent_tree_node_path <= has_perm_tree_node_path
+            ):
+                return True
+        return False
+
     def get(self, request):
         tree_id = request.GET.get('tree_id')
         if not tree_id:
             return JsonResponse(dict(code=400, errors=[dict(tree_id="tree_id不能为空")]))
-        parent_tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
+        parent_tree_node = stree_models.TreeNode.objects.filter(
+            id=tree_id
+        ).first()
 
-        tree_nodes = stree_models.TreeNode.objects.filter(
-            path__regex="^%s\.%s$" % (parent_tree_node.path, Config.NAME_REGEX)
-        )
-        data = stree_serializers.TreeNodeSerializer(tree_nodes, many=True).data
-        return JsonResponse(dict(data=data))
+        has_perm_tree_nodes = [
+            tur.tree_node
+            for tur in stree_models.TreeUserRole.objects.filter(
+                user_id=request.USER
+            ).order_by("tree_node__path")
+        ]
+        has_perm_tree_node_paths = [
+            has_perm_tree_node.path
+            for has_perm_tree_node in has_perm_tree_nodes
+        ]
+
+        children_paths = list()
+
+        if self.parent_tree_node_path__eq__has_perm_tree_node_paths(
+                has_perm_tree_node_paths, parent_tree_node.path
+        ) or self.parent_tree_node_path__gt__has_perm_tree_node_paths(
+            has_perm_tree_node_paths, parent_tree_node.path
+        ):
+            tree_nodes = stree_models.TreeNode.objects.filter(
+                Q(
+                    path__regex="^%s\.%s$"
+                                % (parent_tree_node.path, Config.NAME_REGEX)
+                )
+            ).order_by("path")
+
+        elif self.parent_tree_node_path__lt__has_perm_tree_node_paths(
+                has_perm_tree_node_paths, parent_tree_node.path
+        ):
+
+            for has_perm_tree_node in has_perm_tree_nodes:
+                parttern = re.compile(
+                    r"^(?P<path>%s\.%s)"
+                    % (parent_tree_node.path, Config.NAME_REGEX)
+                )
+                m = parttern.match(has_perm_tree_node.path)
+                if m:
+                    children_path = m.groupdict().get("path")
+                    if children_path not in children_paths:
+                        children_paths.append(children_path)
+            tree_nodes = stree_models.TreeNode.objects.filter(
+                Q(path__in=children_paths)
+            ).order_by("path")
+        else:
+            return JsonResponse(dict(data=list(), status=200))
+        return JsonResponse(dict(data=stree_serializers.TreeNodeSerializer(tree_nodes, many=True).data, status=200))
 
     def put(self, request):
         tree_id = request.data.get('id')
@@ -177,7 +253,6 @@ class ChildrenMove(APIView):
                     src_tree_node.path, "", 1
                 )
                 children_node.save()
-                print(children_node.path)
             src_tree_node.path = new_path
             src_tree_node.save()
         return JsonResponse(dict(data='ok'))

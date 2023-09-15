@@ -58,7 +58,7 @@ class ServiceConf(models.Model):
 class ServiceEnv(models.Model):
     name = models.CharField(max_length=255)
     tree_node = models.OneToOneField(TreeNode, on_delete=models.CASCADE)
-    service = models.OneToOneField(Service, on_delete=models.CASCADE, null=True)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, null=True)
 
 
     def __str__(self):

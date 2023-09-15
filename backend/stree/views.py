@@ -230,6 +230,22 @@ class TreeNodePerm(APIView):
         stree_models.TreeUserRole.objects.bulk_create(turs)
         return JsonResponse(dict(data="ok"))
 
+    def delete(self, request):
+        tree_id = request.data.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        role_id = request.data.get('role_id')
+        if not role_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="role_id不能为空")]), status=400)
+
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="user_id不能为空")]), status=400)
+
+        stree_models.TreeUserRole.objects.filter(user_id=user_id, role_id=role_id, tree_node_id=tree_id).delete()
+        return JsonResponse(dict(data="ok"))
+
     def get(self, request):
         tree_id = request.GET.get('id')
         tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()

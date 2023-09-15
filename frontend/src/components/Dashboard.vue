@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="height: 100%">
     <el-menu
         :default-active="activeIndex"
         class="el-menu"

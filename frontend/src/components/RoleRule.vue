@@ -70,10 +70,10 @@
         </el-select>
       </el-form-item>
     </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="roleRuleDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleAddRoleRule" >确 定</el-button>
-      </span>
+    <span slot="footer" class="dialog-footer">
+      <el-button @click="roleRuleDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="handleAddRoleRule" >确 定</el-button>
+    </span>
     </el-dialog>
   </div>
 </template>
@@ -177,7 +177,6 @@ export default {
           message: '已取消删除'
         });
       });
-
     },
     handleAddRoleRule(){
       this.roleRuleForm.roleId = this.$route.query.id

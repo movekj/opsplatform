@@ -197,12 +197,23 @@ class Children(APIView):
         if stree_models.TreeNode.objects.filter(path=path).exists():
             return JsonResponse(data=dict(code=400, errors=[dict(parent_id="节点[%s]已存在" % path)]), status=400)
 
-        stree_models.TreeNode(
-            name=name,
-            path=path,
-            typ=typ,
-        ).save()
+        with transaction.atomic():
 
+            tree_node = stree_models.TreeNode(
+                name=name,
+                path=path,
+                typ=typ,
+            )
+            tree_node.save()
+            if typ == "service":
+                if stree_models.Service.objects.filter(name=name).exists():
+                    return JsonResponse(data=dict(code=400, errors=[dict(parent_id="服务[%s]已存在" % path)]), status=400)
+                stree_models.Service(name=name, tree_node=tree_node).save()
+            if typ == "service_env":
+                service = stree_models.Service.objects.filter(tree_node=parent_tree_node).first()
+                if stree_models.ServiceEnv.objects.filter(tree_node=tree_node, name=name).exists():
+                    return JsonResponse(data=dict(code=400, errors=[dict(parent_id="环境[%s]已存在" % path)]),status=400)
+                stree_models.ServiceEnv(tree_node=tree_node, name=name, service=service).save()
         return JsonResponse(dict(data='ok'))
 
     def delete(self, request):

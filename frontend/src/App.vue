@@ -34,5 +34,8 @@ img{
     vertical-align:top;
     border:none
 }
+body{
+  overflow: scroll;
+}
 
 </style>

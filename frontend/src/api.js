@@ -25,6 +25,7 @@ http.interceptors.response.use(
   (err) => {
     let errMsg = undefined
     // eslint-disable-next-line no-prototype-builtins
+    console.log(err)
     let error = err.response.data.error
     if (errMsg === undefined && error !== undefined){
       errMsg = err.response.data.error
@@ -47,7 +48,7 @@ http.interceptors.response.use(
         type: 'error',
         duration: 5 * 1000
       })
-      return Promise.resolve(err);
+      return Promise.reject(err);
     }
     if (err.response.status === 401){
       router.push({name: 'login'})
@@ -59,7 +60,7 @@ http.interceptors.response.use(
         duration: 5 * 1000
       })
     }
-    return Promise.resolve(err);
+    return Promise.reject(err);
   }
 );
 

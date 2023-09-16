@@ -25,4 +25,7 @@ urlpatterns = [
     path('children/move', views.ChildrenMove.as_view()),
     path('node/detail', views.TreeNodeDetail.as_view()),
     path('node/perm', views.TreeNodePerm.as_view()),
+    path('service/conf', views.ServiceConf.as_view()),
+    path('service/env/host', views.ServiceEnvHost.as_view()),
+
 ]

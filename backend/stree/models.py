@@ -49,7 +49,8 @@ class ServiceConf(models.Model):
     opadmin = models.CharField(max_length=255)
     rdadmin = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
-    command = models.CharField(max_length=255)
+    build_command = models.TextField(null=True)
+    start_command = models.TextField(null=True)
 
     def __str__(self):
         return self.service.name

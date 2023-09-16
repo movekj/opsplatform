@@ -4,6 +4,9 @@ from rest_framework.views import APIView
 from stree import models as stree_models
 from stree import serializers as stree_serializers
 from permissions import models as permissions_models
+from hosts import serializers as hosts_serializers
+from hosts import models as hosts_models
+
 
 from users import models as users_models
 
@@ -224,7 +227,7 @@ class Children(APIView):
         if not tree_node:
             return JsonResponse(data=dict(code=400, errors=[dict(parent_id="节点[%s]不存在" % tree_id)]), status=400)
         if stree_models.TreeNode.objects.filter(path__regex="^%s.%s$" %(tree_node.path, Config.NAME_REGEX)).count() > 1:
-            return JsonResponse(data=dict(code=400, errors=[dict(parent_id="该节点存在其他子节点，无删除法" % tree_id)]), status=400)
+            return JsonResponse(data=dict(code=400, errors=[dict(parent_id="该节点存在其他子节点，无删除法")]), status=400)
         tree_node.delete()
         return JsonResponse(dict(data='ok'))
 
@@ -402,3 +405,100 @@ class TreeNodePerm(APIView):
             )
 
         return JsonResponse(dict(data=data))
+
+
+class ServiceConf(APIView):
+    def get(self, request):
+        tree_id = request.GET.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+        service_conf = stree_models.ServiceConf.objects.filter(service__tree_node__id=tree_id).first()
+        data = stree_serializers.ServiceConfSerializer().data
+        if service_conf:
+            data = stree_serializers.ServiceConfSerializer(service_conf).data
+        return JsonResponse(dict(data=data))
+
+    def post(self, request):
+        tree_id = request.data.get('tree_id')
+        domain = request.data.get('domain')
+        rdadmin = request.data.get('rdadmin')
+        opadmin = request.data.get('opadmin')
+        git = request.data.get('git')
+        start_command = request.data.get('start_command')
+        build_command = request.data.get('build_command')
+
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+        service = stree_models.Service.objects.filter(tree_node__id=tree_id).first()
+        if not service:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="服务不存在")]), status=400)
+
+        service_conf = stree_models.ServiceConf.objects.filter(service__tree_node__id=tree_id).first()
+        if not service_conf:
+            service_conf = stree_models.ServiceConf(service=service)
+        if domain:
+            service_conf.domain = domain
+        if rdadmin:
+            service_conf.rdadmin = rdadmin
+        if opadmin:
+            service_conf.opadmin = opadmin
+        if git:
+            service_conf.git = git
+        if start_command:
+            service_conf.start_command = start_command
+        if build_command:
+            service_conf.build_command = build_command
+        service_conf.save()
+        return JsonResponse(dict(data='ok'))
+
+
+class ServiceEnvHost(APIView):
+    def get(self, request):
+        tree_id = request.GET.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        hosts = [
+            service_env_host.host
+            for service_env_host in
+            stree_models.ServiceEnvHost.objects.filter(service_env__tree_node_id=tree_id)
+        ]
+
+        data = hosts_serializers.HostSerializer(hosts, many=True).data
+        return JsonResponse(dict(data=data))
+
+    def post(self, request):
+        tree_id = request.data.get('tree_id')
+        host_ids = request.data.get('hostIds')
+
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        if not host_ids:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="hostIds不能为空")]), status=400)
+
+        service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
+        if not service_env:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
+
+        service_env_hosts = list()
+        for host_id in host_ids:
+
+            if not stree_models.ServiceEnvHost.objects.filter(service_env__tree_node__id=tree_id, host__id=host_id).exists():
+                service_env_host = stree_models.ServiceEnvHost(service_env=service_env,host_id=host_id)
+                service_env_hosts.append(service_env_host)
+        stree_models.ServiceEnvHost.objects.bulk_create(service_env_hosts)
+        return JsonResponse(dict(data='ok'))
+
+
+    def delete(self, request):
+        tree_id = request.data.get('tree_id')
+        host_id = request.data.get('host_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        if not host_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="hostIds不能为空")]), status=400)
+
+        stree_models.ServiceEnvHost.objects.filter(service_env__tree_node__id=tree_id, host__id=host_id).delete()
+        return JsonResponse(dict(data='ok'))

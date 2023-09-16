@@ -11,5 +11,5 @@ class Host(models.Model):
     os = models.CharField(max_length=128)
     username = models.CharField(max_length=128)
     password = models.CharField(max_length=128)
-    permission = models.CharField(max_length=128)
+    position = models.CharField(max_length=128)
 

@@ -43,7 +43,7 @@ class Users(APIView):
 
             if password != confirm_password:
                 form.errors['confirm_password'] = '两次密码不一致'
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
 
             salt = utils.get_user_salt()
             encrypt_password = utils.get_user_password_hash(password, salt)
@@ -59,7 +59,7 @@ class Users(APIView):
             return JsonResponse(dict(code=200, data='ok'))
 
         else:
-            return JsonResponse(dict(code=400, errors=form.errors))
+            return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
 
     @with_rbac_perms(perms=[dict(ref="api.users", verb="put"), dict(ref="module.users", verb="write")])
     def put(self, request):

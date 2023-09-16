@@ -28,10 +28,10 @@ class Role(APIView):
             role = permissions_models.Role.objects.filter(name=name).first()
             if role:
                 form.errors["name"] = "角色[%s]已存在" % name
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             permissions_models.Role(name=name).save()
         else:
-            return JsonResponse(dict(code=400, errors=form.errors))
+            return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
         return JsonResponse(dict(code=200, data='ok'))
 
     def put(self, request):
@@ -43,7 +43,7 @@ class Role(APIView):
             role = permissions_models.Role.objects.filter(id=_id).first()
             if not role:
                 form.errors["id"] = "角色[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             role.name = name
             role.save()
         return JsonResponse(dict(code=200, data='ok'))
@@ -56,7 +56,7 @@ class Role(APIView):
             role = permissions_models.Role.objects.filter(id=_id).first()
             if not role:
                 form.errors["id"] = "角色[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             role.delete()
         return JsonResponse(dict(code=200, data='ok'))
 
@@ -79,10 +79,10 @@ class Resource(APIView):
             _type = clean_data.get("type")
             if permissions_models.Resource.objects.filter(ref=ref).exists():
                 form.errors["ref"] = "资源[%s]已存在" % name
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             permissions_models.Resource(name=name, ref=ref, type=_type).save()
             return JsonResponse(dict(code=200, data='ok'))
-        return JsonResponse(dict(code=400, errors=form.errors))
+        return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
 
     def put(self, request):
         form = ModifyResourceForm(request.data)
@@ -93,7 +93,7 @@ class Resource(APIView):
             resource = permissions_models.Resource.objects.filter(id=_id).first()
             if not resource:
                 form.errors["id"] = "资源[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             resource.name = name
             resource.save()
         return JsonResponse(dict(code=200, data='ok'))
@@ -106,7 +106,7 @@ class Resource(APIView):
             resource = permissions_models.Resource.objects.filter(id=_id).first()
             if not resource:
                 form.errors["id"] = "资源[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             resource.delete()
         return JsonResponse(dict(code=200, data='ok'))
 
@@ -127,10 +127,10 @@ class Verb(APIView):
             name = clean_data.get("name")
             if permissions_models.Verb.objects.filter(name=name).exists():
                 form.errors["name"] = "动作[%s]已存在" % name
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             permissions_models.Verb(name=name).save()
             return JsonResponse(dict(code=200, data='ok'))
-        return JsonResponse(dict(code=400, errors=form.errors))
+        return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
 
     def put(self, request):
         form = ModifyVerbForm(request.data)
@@ -141,7 +141,7 @@ class Verb(APIView):
             verb = permissions_models.Verb.objects.filter(id=_id).first()
             if not verb:
                 form.errors["id"] = "动作[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             verb.name = name
             verb.save()
         return JsonResponse(dict(code=200, data='ok'))
@@ -154,7 +154,7 @@ class Verb(APIView):
             verb = permissions_models.Verb.objects.filter(id=_id).first()
             if not verb:
                 form.errors["id"] = "动作[%s]不存在" % _id
-                return JsonResponse(dict(code=400, errors=form.errors))
+                return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
             verb.delete()
         return JsonResponse(dict(code=200, data='ok'))
 

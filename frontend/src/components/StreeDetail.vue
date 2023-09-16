@@ -1,9 +1,9 @@
 <template>
   <div style="height: 100%; width: 100%;margin-top: 4px; margin-left: 4px; margin-right: 4px;position: relative; ">
     <el-tabs style="height: 100%;; position: relative;" v-model="activeName" type="card" @tab-click="handleClick">
-      <span> {{ $store.state.selectedNode.path }}({{  $store.state.selectedNode.typ  }})</span>
+      <span>{{ TreeNodeTypeMap[$store.state.selectedNode.typ] }}: {{ $store.state.selectedNode.path }}</span>
 
-      <el-tab-pane  label="基本信息" name="basicInfo" style="height: 100%;">
+      <el-tab-pane  label="基本信息" name="basicInfo" style="height: 100%; margin-top: 15px">
         <div style="display: flex;justify-content: space-between">
 
           <el-card style="width: 100%;" shadow="never">
@@ -37,44 +37,90 @@
           </el-card>
         </div>
         <div style="display: flex; height: 100%;justify-content: space-between; margin-top: 10px; margin-bottom: 10px">
-          <el-card style="width: 49%; overflow-y: auto" class="overflowCard" shadow="never">
+          <el-card style="width: 100%; overflow-y: auto" class="overflowCard" shadow="never" v-if="$store.state.selectedNode.typ === 'service'">
             <span style="display: flex; justify-content: space-between; margin-bottom: 20px">
               配置信息
-              <el-button type="primary" size="mini">确定</el-button>
+              <el-button size="mini" v-if="modifyServiceConf" @click="modifyServiceConf = false">修改</el-button>
+              <template  v-else>
+                <span>
+                  <el-button  size="mini"  @click="modifyServiceConf=fa">取消</el-button>
+                  <el-button type="primary" size="mini" @click="handleModifyServiceConf">确定</el-button>
+                </span>
+              </template>
             </span>
 
             <el-form :label-position="'right'" :model="serviceConfForm" label-width="120px">
-              <el-form-item label="git地址" style="margin-bottom: 10px" prop="git">
-                <el-input v-model="serviceConfForm.git"></el-input>
+              <el-form-item label="git地址:" style="margin-bottom: 10px" prop="git">
+                <el-input v-model="serviceConfForm.git" v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.git}}</span>
               </el-form-item>
-              <el-form-item label="运维负责人" style="margin-bottom: 10px" prop="opadmin">
-                <el-input v-model="serviceConfForm.opadmin"></el-input>
+              <el-form-item label="运维负责人:" style="margin-bottom: 10px" prop="opadmin">
+                <el-input v-model="serviceConfForm.opadmin" v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.opadmin}}</span>
               </el-form-item>
-              <el-form-item label="研发负责人" style="margin-bottom: 10px" prop="rdadmin">
-                <el-input v-model="serviceConfForm.rdadmin"></el-input>
+              <el-form-item label="研发负责人:" style="margin-bottom: 10px" prop="rdadmin">
+                <el-input v-model="serviceConfForm.rdadmin" v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.rdadmin}}</span>
               </el-form-item>
-              <el-form-item label="域名" style="margin-bottom: 10px" prop="domain">
-                <el-input v-model="serviceConfForm.domain"></el-input>
+              <el-form-item label="域名:" style="margin-bottom: 10px" prop="domain">
+                <el-input v-model="serviceConfForm.domain" v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.domain}}</span>
               </el-form-item>
-              <el-form-item label="打包命令" style="margin-bottom: 10px" prop="build_command">
-                <el-input v-model="serviceConfForm.build_command"></el-input>
+              <el-form-item label="打包命令:" style="margin-bottom: 10px" prop="build_command">
+                <el-input v-model="serviceConfForm.build_command" type="textarea" rows="5" v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.build_command}}</span>
               </el-form-item>
-              <el-form-item label="启动命令" style="margin-bottom: 10px" prop="start_command">
-                <el-input v-model="serviceConfForm.start_command"></el-input>
+              <el-form-item label="启动命令:" style="margin-bottom: 10px" prop="start_command">
+                <el-input v-model="serviceConfForm.start_command" type="textarea" rows="5"  v-if="!modifyServiceConf"></el-input>
+                <span v-else>{{ serviceConfForm.start_command}}</span>
               </el-form-item>
             </el-form>
 
-
           </el-card>
-          <el-card style="width: 50%;overflow-y: auto"  class="overflowCard"  shadow="never">
+          <el-card style="overflow-y: auto; width: 100%"  v-if="$store.state.selectedNode.typ === 'service_env'" class="overflowCard"  shadow="never">
             <span style="display: block; margin-bottom: 20px">
               主机列表
+              <el-button @click="getServiceEnvHost" size="mini">刷新</el-button>
+              <el-button @click="addServiceEnvHostVisible = true" type="primary" size="mini">关联主机</el-button>
             </span>
+            <el-table :data="serviceEnvHosts">
+              <el-table-column label="主机名" prop="hostname"></el-table-column>
+              <el-table-column label="ip地址" prop="ip"></el-table-column>
+              <el-table-column label="cpu核心数" prop="cpu"></el-table-column>
+              <el-table-column label="内存" prop="memory"></el-table-column>
+              <el-table-column label="操作">
+                <template slot-scope="scope">
+                  <el-button typ="text" @click="handleDeleteServiceEnvHost(scope.row)" size="mini" type="text">解除关联</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
           </el-card>
         </div>
       </el-tab-pane>
       <el-tab-pane label="打包发布" name="third">角色管理</el-tab-pane>
     </el-tabs>
+    <el-dialog
+      :visible.sync="addServiceEnvHostVisible"
+      @open="getHostOptions"
+      title="关联主机"
+    >
+      <el-form>
+        <el-form-item label="主机">
+          <el-select v-model="serviceEnvHostForm.hostIds" multiple style="width: 100%; overflow: hidden">
+            <el-option :key="option.id" style="width: 100%"
+                       :label="option.hostname + '(' + option.ip + ')'"
+                       :value="option.id"
+                       v-for="option in hostOptions">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addServiceEnvHostVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddServiceEnvHost" >确 定</el-button>
+      </span>
+
+    </el-dialog>
     <el-dialog
       :visible.sync="addTURDialogVisible"
       @open="getUserOptions"
@@ -104,19 +150,27 @@
 </template>
 <script>
 import http from '@/api'
-import {TreeOperation} from "@/const"
-
+import {TreeOperation,  TreeNodeType, TreeNodeTypeMap} from "@/const"
 
 export default {
   name: 'StreeDetailCp',
+  computed: {
+  },
 
   data(){
     return {
       activeName: "basicInfo",
       permData: [],
       addTURDialogVisible: false,
+      addServiceEnvHostVisible: false,
       userOptions: [],
+      hostOptions: [],
+      serviceEnvHostForm: {
+        hostIds: [],
+        tree_id: ''
+      },
       serviceConfForm: {
+        tree_id: '',
         git: '',
         opadmin: '',
         rdadmin: '',
@@ -124,11 +178,14 @@ export default {
         start_command: '',
         build_command: ''
       },
+      serviceEnvHosts: [],
+      modifyServiceConf: true,
       treeNodeRuleUserForm: {
         user_ids: [],
         tree_id: '',
         role_id: ''
       },
+      TreeNodeTypeMap: TreeNodeTypeMap,
       emptyTreeNodeRuleUserForm: {
         user_ids: [],
         tree_id: '',
@@ -140,6 +197,12 @@ export default {
     "$store.state.selectedNode.id": {
       handler(){
         this.getPermData()
+        if (this.$store.state.selectedNode.typ === TreeNodeType.service){
+          this.getServiceConf()
+        }
+        if (this.$store.state.selectedNode.typ === TreeNodeType.serviceEnv){
+          this.getServiceEnvHost()
+        }
       },
       immediate:true
     }
@@ -153,10 +216,33 @@ export default {
         this.userOptions = resp.data
       })
     },
+    getHostOptions(){
+      http.get("/api/v1/hosts/",).then((resp)=>{
+        this.hostOptions = resp.data
+      })
+    },
+
+    getServiceEnvHost(){
+      http.get('/api/v1/stree/service/env/host', {params:{tree_id:this.$store.state.selectedNode.id}}).then((resp)=>{
+        this.serviceEnvHosts = resp.data
+      })
+    },
+    getServiceConf(){
+      http.get('/api/v1/stree/service/conf', {params:{tree_id:this.$store.state.selectedNode.id}}).then((resp)=>{
+        this.serviceConf = resp.data
+      })
+    },
     handleAddTURDialogOpen(row){
       this.addTURDialogVisible = true
       this.treeNodeRuleUserForm.role_id = row.id
       this.treeNodeRuleUserForm.tree_id = this.$store.state.selectedNode.id
+    },
+    handleModifyServiceConf(){
+      this.serviceConfForm.tree_id = this.$store.state.selectedNode.id
+      http.post('/api/v1/stree/service/conf', this.serviceConfForm).then(()=>{
+        this.getServiceConf()
+        this.modifyServiceConf = true
+      })
     },
     handleAddTUR(){
       http.post('/api/v1/stree/node/perm', this.treeNodeRuleUserForm).then(()=>{
@@ -187,7 +273,37 @@ export default {
         });
       });
 
+    },
+    handleAddServiceEnvHost(){
+      this.serviceEnvHostForm.tree_id = this.$store.state.selectedNode.id
+      http.post('/api/v1/stree/service/env/host', this.serviceEnvHostForm ).then(()=>{
+        this.getServiceEnvHost()
+        this.addServiceEnvHostVisible = false
 
+      })
+    },
+    handleDeleteServiceEnvHost(host){
+     this.$confirm('是否解除'+ host.hostname + '与'+ this.$store.state.selectedNode.path
+     + '的关联?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+     }).then(() => {
+        http.delete('/api/v1/stree/service/env/host', {data:{
+          host_id: host.id,tree_id: this.$store.state.selectedNode.id}
+        }).then(()=>{
+          this.getServiceEnvHost()
+          this.$message({
+            type: 'success',
+            message: '接触关联成功!'
+          });
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消'
+        });
+      });
     },
     getPermData(){
       if (this.$store.state.selectedNode.id === 0 || this.$store.state.selectedNode.id === TreeOperation.newNodeId){

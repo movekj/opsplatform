@@ -73,14 +73,14 @@ class BuildThread(Thread):
 
         if build_history.build_log is None:
             build_history.build_log = ''
-
         for service_env_host in tree_models.ServiceEnvHost.objects.filter(service_env=build_history.service_env):
             build_history.build_log += "开始在服务器[%s@%s]上执行构建操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
-
+            build_history.save()
             ssh = paramiko.SSHClient()
             ssh.load_system_host_keys()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
+
                 ssh.connect(hostname=service_env_host.host.ip, username=service_env_host.host.username, password=service_env_host.host.password)
                 channel = ssh.get_transport().open_session()
                 channel.exec_command(service_conf.start_command)
@@ -127,6 +127,9 @@ class BuildThread(Thread):
                 build_history.status = "FAIL"
                 build_history.stop_time = datetime.datetime.now()
                 build_history.save()
+            finally:
+                ssh.close()
+            ssh.close()
 
 
 class PubThread(Thread):
@@ -154,7 +157,7 @@ class PubThread(Thread):
 
         for service_env_host in tree_models.ServiceEnvHost.objects.filter(service_env=pub_hsitory.service_env):
             pub_hsitory.pub_log += "开始发布服务器[%s@%s]上的服务\n" %(service_env_host.host.ip,service_env_host.host.hostname)
-
+            pub_hsitory.save()
             ssh = paramiko.SSHClient()
             ssh.load_system_host_keys()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -204,6 +207,9 @@ class PubThread(Thread):
                 pub_hsitory.status = "FAIL"
                 pub_hsitory.stop_time = datetime.datetime.now()
                 pub_hsitory.save()
+            finally:
+                ssh.close()
+            ssh.close()
 
 
 

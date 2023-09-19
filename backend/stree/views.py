@@ -572,7 +572,10 @@ class ServicePub(APIView):
         )
         pub_history.save()
 
-        utils.PubThread(pub_history.id).start()
+        thread =  utils.PubThread(pub_history.id)
+        thread.start()
+        print(thread.is_alive())
+
         return JsonResponse(data=dict(data='ok'))
 
 

@@ -25,6 +25,7 @@ export default {
       const term = new Terminal({
         fontSize: 14,
         cursorBlink: true,
+
       });
       const attachAddon = new AttachAddon(this.socket);
       const fitAddon = new FitAddon();
@@ -33,6 +34,25 @@ export default {
       term.open(document.getElementById('xterm'));
       fitAddon.fit();
       term.focus();
+      let cmd = ''
+      term.onKey(
+        (key, )=> {
+          if (key.length > 0) {
+            this.term.write(key);
+            this.term.write("\r\n");
+          }
+          if (key === 13) {
+            term.write(key + '\n')
+            cmd = ''
+          } else if (key === 8) {
+            term.write('\b \b')
+            cmd = cmd.substring(0, cmd.length - 1)
+          } else {
+            cmd = cmd + key
+            term.write(key)
+          }
+        }
+      )
       this.term = term
     },
     initSocket() {
@@ -63,7 +83,7 @@ export default {
 </script>
 
 <template>
-  <div id="xterm" class="xterm" />
+  <div id="xterm" class="xterm" style="width: 100%" />
 
 </template>
 

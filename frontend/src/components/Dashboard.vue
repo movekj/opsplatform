@@ -19,7 +19,6 @@
       >退出登录</el-button>
     </el-menu>
     <router-view></router-view>
-
   </div>
 </template>
 <script>
@@ -29,13 +28,14 @@ export default {
   name: 'DashboardCp',
   data () {
     return {
-      activeIndex: '/stree',
+      activeIndex: '/stree/detail',
     }
   },
   mounted(){
     http.get("/api/v1/users/info/").then((resp)=>{
       this.$store.commit('commitUserinfo', resp.data)
     })
+    this.$router.push(this.activeIndex)
   },
   methods: {
     HasPerm: utils.HasPerm,

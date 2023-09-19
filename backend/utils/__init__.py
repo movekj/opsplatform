@@ -58,25 +58,75 @@ class BuildThread(Thread):
 
     def run(self):
         build_history = tree_models.BuildHistory.objects.filter(id=self.history_id).first()
-        build_cmd_file_path = "/tmp/%s.sh" % build_history.id
-
-        with open(build_cmd_file_path, 'w') as f:
-            f.write(build_history.build_cmd)
-        process = subprocess.Popen("bash -x " + build_cmd_file_path, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-        while process.poll() is None:
-            line = process.stderr.readline() + process.stdout.readline()
-            if build_history.build_log is None:
-                build_history.build_log = ''
-            build_history.build_log += str(line.decode())
-            build_history.save()
-            time.sleep(0.5)
-
-        if process.returncode == 0:
-            build_history.status = "SUCCESS"
-        else:
+        service_conf = tree_models.ServiceConf.objects.filter(service=build_history.service_env.service).first()
+        if not service_conf:
+            build_history.build_log += "服务配置信息不存在"
             build_history.status = "FAIL"
-        build_history.stop_time = datetime.datetime.now()
-        build_history.save()
+            build_history.stop_time = datetime.datetime.now()
+            build_history.save()
+
+        if not service_conf.start_command:
+            build_history.build_log += "服务没有配置构建命令"
+            build_history.status = "FAIL"
+            build_history.stop_time = datetime.datetime.now()
+            build_history.save()
+
+        if build_history.build_log is None:
+            build_history.build_log = ''
+
+        for service_env_host in tree_models.ServiceEnvHost.objects.filter(service_env=build_history.service_env):
+            build_history.build_log += "开始在服务器[%s@%s]上执行构建操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
+
+            ssh = paramiko.SSHClient()
+            ssh.load_system_host_keys()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            try:
+                ssh.connect(hostname=service_env_host.host.ip, username=service_env_host.host.username, password=service_env_host.host.password)
+                channel = ssh.get_transport().open_session()
+                channel.exec_command(service_conf.start_command)
+
+                while True:
+
+                    if channel.exit_status_ready():
+                        break
+
+                    # 检查通道是否有错误输出可读
+                    if channel.recv_stderr_ready():
+                        line = channel.recv_stderr(1024).decode('utf-8')
+                        if line:
+                            build_history.build_log += line
+                            build_history.save()
+
+                    # 检查通道是否有数据可读
+                    if channel.recv_ready():
+                        line = channel.recv(1024).decode('utf-8')
+                        if line:
+                            build_history.build_log += line
+                            build_history.save()
+
+
+                line = channel.recv(1024).decode('utf-8')
+                if line:
+                    build_history.build_log += line
+                    build_history.save()
+
+                # 检查通道是否有错误输出可读
+                line = channel.recv_stderr(1024).decode('utf-8')
+                if line:
+                    build_history.build_log += line
+                    build_history.save()
+
+                if channel.recv_exit_status() == 0:
+                    build_history.status = "SUCCESS"
+                else:
+                    build_history.status = "FAIL"
+                build_history.stop_time = datetime.datetime.now()
+                build_history.save()
+            except Exception as e:
+                build_history.build_log += str(e)
+                build_history.status = "FAIL"
+                build_history.stop_time = datetime.datetime.now()
+                build_history.save()
 
 
 class PubThread(Thread):
@@ -118,6 +168,13 @@ class PubThread(Thread):
                     if channel.exit_status_ready():
                         break
 
+                    # 检查通道是否有错误输出可读
+                    if channel.recv_stderr_ready():
+                        line = channel.recv_stderr(1024).decode('utf-8')
+                        if line:
+                            pub_hsitory.pub_log += line
+                            pub_hsitory.save()
+                            
                     # 检查通道是否有数据可读
                     if channel.recv_ready():
                         line = channel.recv(1024).decode('utf-8')
@@ -125,12 +182,7 @@ class PubThread(Thread):
                             pub_hsitory.pub_log += line
                             pub_hsitory.save()
 
-                    # 检查通道是否有错误输出可读
-                    if channel.recv_stderr_ready():
-                        line = channel.recv_stderr(1024).decode('utf-8')
-                        if line:
-                            pub_hsitory.pub_log += line
-                            pub_hsitory.save()
+
 
                 line = channel.recv(1024).decode('utf-8')
                 if line:

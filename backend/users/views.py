@@ -108,6 +108,7 @@ class Users(APIView):
 
 
 class UserLogin(APIView):
+
     def post(self, request):
         form = forms.UserLoginForm(request.data)
         if form.is_valid():
@@ -128,6 +129,7 @@ class UserLogin(APIView):
 
 
 class UserRoleBinding(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="delete"), dict(ref="module.users", verb="write")])
     def post(self, request):
         user_id = request.data.get('id')
         role_ids = request.data.get('roleIds')
@@ -156,6 +158,7 @@ class UserRoleBinding(APIView):
         permissions_models.UserRoleBinding.objects.bulk_create(user_role_bindings)
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="delete"), dict(ref="module.users", verb="write")])
     def delete(self, request):
         user_id = request.data.get('id')
         role_id = request.data.get('roleId')

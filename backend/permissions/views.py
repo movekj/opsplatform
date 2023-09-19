@@ -12,7 +12,7 @@ from django.db import transaction
 
 
 class Role(APIView):
-    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read"), dict(ref="module.users", verb="read")])
     def get(self, request):
         role_id = request.GET.get("id")
         if role_id:
@@ -66,7 +66,7 @@ class Role(APIView):
 
 
 class Resource(APIView):
-    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read"), dict(ref="module.users", verb="read")])
     def get(self, request):
         resource_id = request.GET.get("id")
         if resource_id:
@@ -120,7 +120,7 @@ class Resource(APIView):
 
 
 class Verb(APIView):
-    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read"), dict(ref="module.users", verb="read")])
     def get(self, request):
         verb_id = request.GET.get("id")
         if verb_id:

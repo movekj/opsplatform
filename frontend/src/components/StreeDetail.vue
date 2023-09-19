@@ -93,7 +93,7 @@
               <el-table-column label="操作">
                 <template slot-scope="scope">
                   <el-button typ="text" @click="handleDeleteServiceEnvHost(scope.row)" size="mini" type="text">解除关联</el-button>
-                  <el-button typ="text" @click="$router.push('/stree/terminal')" size="mini" type="text">登录</el-button>
+                  <el-button typ="text" @click="$router.push({path: '/stree/terminal', query: {host_id: scope.row.id}})" size="mini" type="text">登录</el-button>
 
                 </template>
               </el-table-column>

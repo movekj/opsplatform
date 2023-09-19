@@ -10,6 +10,8 @@ import select
 import sys
 import paramiko
 
+from hosts import models as host_models
+
 
 class WebTerminal(SyncConsumer):
     def __init__(self):
@@ -18,10 +20,21 @@ class WebTerminal(SyncConsumer):
         self.channel = None
         self.stdin = None
         self.command = ""
+
     def run(self):
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect('127.0.0.1', username='lixingxing', password='........1')
+        query_string = self.scope.get('query_string')
+        query_dict = dict(pair.split('=') for pair in query_string.decode().split('&'))
+        host_id = query_dict.get('host_id')
+
+        host = host_models.Host.objects.filter(id=host_id).first()
+        if not host:
+            self.send({"type": "websocket.send",
+                       "text": "主机不存在"})
+            return
+
+        client.connect(hostname=host.ip, username=host.username, password=host.password)
         self.channel = client.invoke_shell()
         self.stdin = self.channel.makefile_stdin("wb", 1024)
         while True:
@@ -39,7 +52,6 @@ class WebTerminal(SyncConsumer):
             # 检查通道是否有错误输出可读
             if self.channel.recv_stderr_ready():
                 line = self.channel.recv(1024).decode('utf-8')
-                print("recv ",line)
 
                 if line:
                     self.send({"type": "websocket.send",

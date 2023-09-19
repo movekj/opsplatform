@@ -8,7 +8,7 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     'websocket': AuthMiddlewareStack(
         URLRouter([
-            path('terminal/', WebTerminal())
+            path('terminal', WebTerminal())
         ])
 
     )

@@ -174,15 +174,13 @@ class PubThread(Thread):
                         if line:
                             pub_hsitory.pub_log += line
                             pub_hsitory.save()
-                            
+
                     # 检查通道是否有数据可读
                     if channel.recv_ready():
                         line = channel.recv(1024).decode('utf-8')
                         if line:
                             pub_hsitory.pub_log += line
                             pub_hsitory.save()
-
-
 
                 line = channel.recv(1024).decode('utf-8')
                 if line:

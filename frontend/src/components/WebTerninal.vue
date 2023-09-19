@@ -56,7 +56,7 @@ export default {
       this.term = term
     },
     initSocket() {
-      this.socket = new WebSocket('ws://10.112.0.9:8889/terminal/');
+      this.socket = new WebSocket('ws://10.112.0.9:8889/terminal?host_id=' + this.$route.query.host_id);
       this.socketOnClose();
       this.socketOnOpen();
       this.socketOnError();

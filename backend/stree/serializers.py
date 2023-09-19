@@ -17,3 +17,25 @@ class ServiceConfSerializer(serializers.Serializer):
     start_command = serializers.CharField()
     build_command = serializers.CharField()
 
+
+class BuildHistorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    version = serializers.CharField()
+    build_log = serializers.CharField()
+    build_cmd = serializers.CharField()
+    start_time = serializers.DateTimeField()
+    stop_time = serializers.DateTimeField()
+    status = serializers.CharField()
+    operator = serializers.CharField()
+
+
+class PubHistorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    version = serializers.CharField()
+    pub_log = serializers.CharField()
+    pub_cmd = serializers.CharField()
+    start_time = serializers.DateTimeField()
+    stop_time = serializers.DateTimeField()
+    status = serializers.CharField()
+    operator = serializers.CharField()
+

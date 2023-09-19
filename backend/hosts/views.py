@@ -3,10 +3,12 @@ from hosts import models as hosts_models
 from . import serializers as hosts_serializers
 from rest_framework.views import APIView
 from .forms import AddHostForm, ModifyHostForm, DeleteHostForm
+from utils  import with_rbac_perms
 
 # Create your views here.
 
 class Host(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.hosts", verb="get"), dict(ref="module.hosts", verb="read")])
     def get(self, request):
         host_id = request.GET.get("id")
         if host_id:
@@ -15,6 +17,7 @@ class Host(APIView):
         hosts = hosts_models.Host.objects.all()
         return JsonResponse(dict(code=200, data=hosts_serializers.HostSerializer(hosts, many=True).data))
 
+    @with_rbac_perms(perms=[dict(ref="api.hosts", verb="get"), dict(ref="module.hosts", verb="write")])
     def post(self, request):
         form = AddHostForm(request.data)
         if form.is_valid():
@@ -36,20 +39,12 @@ class Host(APIView):
             if host:
                 form.errors["hostname"] = "主机名[%s]已存在" % hostname
                 return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
-            hosts_models.Host(
-                hostname=hostname,
-                ip=ip,
-                cpu=cpu,
-                memory=memory,
-                os=os,
-                username=username,
-                password=password,
-                position=position
-            ).save()
+            hosts_models.Host(hostname=hostname,ip=ip,cpu=cpu,memory=memory,os=os,username=username,password=password,position=position).save()
         else:
             return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.hosts", verb="get"), dict(ref="module.hosts", verb="write")])
     def put(self, request):
         form = ModifyHostForm(request.data)
 
@@ -68,7 +63,6 @@ class Host(APIView):
             if not host:
                 form.errors["id"] = "主机[%s]不存在" % _id
                 return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
-            print(clean_data)
             if hostname:
                 host.hostname = hostname
             if ip:
@@ -86,9 +80,9 @@ class Host(APIView):
             if position:
                 host.position = position
             host.save()
-        print(form.errors)
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.hosts", verb="get"), dict(ref="module.hosts", verb="write")])
     def delete(self, request):
         form = DeleteHostForm(request.data)
         if form.is_valid():

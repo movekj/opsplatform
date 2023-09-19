@@ -23,7 +23,7 @@
         </span>
       </el-tree>
     </div>
-    <StreeDetail></StreeDetail>
+    <router-view></router-view>
   </div>
 </template>
 <script>
@@ -31,11 +31,10 @@ import http from '@/api'
 import TreeRender from "@/components/TreeRender.vue";
 import {TreeOperation} from "@/const";
 import {TreeNodeType} from "@/const";
-import StreeDetail from "@/components/StreeDetail.vue";
 
 export default {
   name: 'StreeCp',
-  components: {TreeRender, StreeDetail},
+  components: {TreeRender},
   data(){
     return {
       lazy: true,
@@ -99,6 +98,7 @@ export default {
     },
     handleNodeClick(data, node){
       this.$store.dispatch("updateSelectedNodeData", node.data)
+      this.$router.push("/stree/detail")
     },
     handleCreateCompany(node){
 

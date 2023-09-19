@@ -6,6 +6,8 @@ from stree import serializers as stree_serializers
 from permissions import models as permissions_models
 from hosts import serializers as hosts_serializers
 from hosts import models as hosts_models
+import datetime
+from utils import with_rbac_perms
 
 
 from users import models as users_models
@@ -15,8 +17,7 @@ from django.db import transaction
 import utils
 from django.db.models import Q
 
-
-class Init(APIView):
+class TreeNodeInit(APIView):
     def get(self, request):
         stree_nodes = stree_models.TreeNode.objects.filter(
             path__regex="^%s\.%s$" % (Config.NAME_REGEX, Config.NAME_REGEX)
@@ -39,7 +40,6 @@ class Init(APIView):
                     ).first()
                     tree_node_data = stree_serializers.TreeNodeSerializer(root_tree_node).data
                     tree_node_data_cache.append(root_tree_node_path)
-
         second_level_tree_node_paths = list()
         for tree_node in tree_nodes:
             second_level_tree_node_parttern = re.compile(
@@ -60,7 +60,7 @@ class Init(APIView):
         return tree_node_data
 
 
-class Children(APIView):
+class TreeNodeChildren(APIView):
 
     def parent_tree_node_path__eq__has_perm_tree_node_paths(
         self, has_perm_tree_node_paths, parent_tree_node_path
@@ -95,20 +95,14 @@ class Children(APIView):
                 return True
         return False
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="read")])
     def get(self, request):
         tree_id = request.GET.get('tree_id')
         if not tree_id:
             return JsonResponse(dict(code=400, errors=[dict(tree_id="tree_id不能为空")]))
-        parent_tree_node = stree_models.TreeNode.objects.filter(
-            id=tree_id
-        ).first()
+        parent_tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
 
-        has_perm_tree_nodes = [
-            tur.tree_node
-            for tur in stree_models.TreeUserRole.objects.filter(
-                user_id=request.USER
-            ).order_by("tree_node__path")
-        ]
+        has_perm_tree_nodes = [tur.tree_node for tur in stree_models.TreeUserRole.objects.filter(user_id=request.USER).order_by("tree_node__path")]
         has_perm_tree_node_paths = [
             has_perm_tree_node.path
             for has_perm_tree_node in has_perm_tree_nodes
@@ -121,22 +115,15 @@ class Children(APIView):
         ) or self.parent_tree_node_path__gt__has_perm_tree_node_paths(
             has_perm_tree_node_paths, parent_tree_node.path
         ):
-            tree_nodes = stree_models.TreeNode.objects.filter(
-                Q(
-                    path__regex="^%s\.%s$"
-                                % (parent_tree_node.path, Config.NAME_REGEX)
-                )
-            ).order_by("path")
+            tree_nodes = stree_models.TreeNode.objects.filter(Q(path__regex="^%s\.%s$"% (parent_tree_node.path,
+            Config.NAME_REGEX))).order_by("path")
 
         elif self.parent_tree_node_path__lt__has_perm_tree_node_paths(
                 has_perm_tree_node_paths, parent_tree_node.path
         ):
 
             for has_perm_tree_node in has_perm_tree_nodes:
-                parttern = re.compile(
-                    r"^(?P<path>%s\.%s)"
-                    % (parent_tree_node.path, Config.NAME_REGEX)
-                )
+                parttern = re.compile(r"^(?P<path>%s\.%s)" % (parent_tree_node.path, Config.NAME_REGEX))
                 m = parttern.match(has_perm_tree_node.path)
                 if m:
                     children_path = m.groupdict().get("path")
@@ -149,6 +136,7 @@ class Children(APIView):
             return JsonResponse(dict(data=list(), status=200))
         return JsonResponse(dict(data=stree_serializers.TreeNodeSerializer(tree_nodes, many=True).data, status=200))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="read")])
     def put(self, request):
         tree_id = request.data.get('id')
         name = request.data.get('name')
@@ -182,11 +170,11 @@ class Children(APIView):
         tree_node.save()
         return JsonResponse(dict(data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")])
     def post(self, request):
         parent_id = request.data.get('parent_id')
         name = request.data.get('name')
         typ = request.data.get('type')
-
         if not typ:
             return JsonResponse(data=dict(code=400, errors=[dict(type="type不能为空")]), status=400)
         if not name:
@@ -199,14 +187,8 @@ class Children(APIView):
         path = parent_tree_node.path + '.' + name
         if stree_models.TreeNode.objects.filter(path=path).exists():
             return JsonResponse(data=dict(code=400, errors=[dict(parent_id="节点[%s]已存在" % path)]), status=400)
-
         with transaction.atomic():
-
-            tree_node = stree_models.TreeNode(
-                name=name,
-                path=path,
-                typ=typ,
-            )
+            tree_node = stree_models.TreeNode(name=name, path=path, typ=typ)
             tree_node.save()
             if typ == "service":
                 if stree_models.Service.objects.filter(name=name).exists():
@@ -219,6 +201,7 @@ class Children(APIView):
                 stree_models.ServiceEnv(tree_node=tree_node, name=name, service=service).save()
         return JsonResponse(dict(data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.hosts", verb="write")])
     def delete(self, request):
         tree_id = request.data.get('id')
         if not tree_id:
@@ -232,7 +215,7 @@ class Children(APIView):
         return JsonResponse(dict(data='ok'))
 
 
-class ChildrenMove(APIView):
+class TreeNodeMove(APIView):
     def post(self, request):
         dest_id = request.data.get('dest_id')
         src_id = request.data.get('src_id')
@@ -284,6 +267,7 @@ class TreeNodeDetail(APIView):
 
 
 class TreeNodePerm(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")])
     def post(self, request):
         tree_id = request.data.get('tree_id')
         tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
@@ -319,6 +303,7 @@ class TreeNodePerm(APIView):
         stree_models.TreeUserRole.objects.bulk_create(turs)
         return JsonResponse(dict(data="ok"))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")])
     def delete(self, request):
         tree_id = request.data.get('tree_id')
         if not tree_id:
@@ -335,6 +320,7 @@ class TreeNodePerm(APIView):
         stree_models.TreeUserRole.objects.filter(user_id=user_id, role_id=role_id, tree_node_id=tree_id).delete()
         return JsonResponse(dict(data="ok"))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="read")])
     def get(self, request):
         tree_id = request.GET.get('id')
         tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
@@ -342,7 +328,6 @@ class TreeNodePerm(APIView):
             return JsonResponse(data=dict(code=400, errors=[dict(type="节点不存在")]), status=400)
 
         is_admin = 0
-
         if utils.with_rbac_perms(perms=[dict(ref="stree.module", verb="write")]):
             is_admin = 1
 
@@ -351,7 +336,6 @@ class TreeNodePerm(APIView):
         data = dict(
             result=list()
         )
-
         def do(tree_node):
             readonly = 1
             if tree_node.id == int(tree_id):
@@ -372,14 +356,7 @@ class TreeNodePerm(APIView):
 
                 if user.username not in role_users_cache[role_name]:
                     role_users[role_name].append(
-                        dict(
-                            id=user.id,
-                            tur_id=tur.id,
-                            cname=user.cname,
-                            phone=user.phone,
-                            readonly=readonly,
-                            username=user.username,
-                        )
+                        dict(id=user.id, tur_id=tur.id, cname=user.cname, phone=user.phone, readonly=readonly,username=user.username)
                     )
                     role_users_cache[role_name].append(user.username)
                 if tur.role.name not in data:
@@ -395,19 +372,12 @@ class TreeNodePerm(APIView):
 
         for tree_role in stree_models.TreeRole.objects.order_by("name"):
             data['result'].append(
-                dict(
-                    id=tree_role.id,
-                    name=tree_role.name,
-                    description=tree_role.description,
-                    is_admin=is_admin,
-                    users=role_users.get(tree_role.name, []),
-                )
-            )
-
+                dict(id=tree_role.id, name=tree_role.name, description=tree_role.description, is_admin=is_admin, users=role_users.get(tree_role.name, []),))
         return JsonResponse(dict(data=data))
 
 
 class ServiceConf(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="read")])
     def get(self, request):
         tree_id = request.GET.get('tree_id')
         if not tree_id:
@@ -418,6 +388,7 @@ class ServiceConf(APIView):
             data = stree_serializers.ServiceConfSerializer(service_conf).data
         return JsonResponse(dict(data=data))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")])
     def post(self, request):
         tree_id = request.data.get('tree_id')
         domain = request.data.get('domain')
@@ -432,7 +403,6 @@ class ServiceConf(APIView):
         service = stree_models.Service.objects.filter(tree_node__id=tree_id).first()
         if not service:
             return JsonResponse(data=dict(code=400, errors=[dict(type="服务不存在")]), status=400)
-
         service_conf = stree_models.ServiceConf.objects.filter(service__tree_node__id=tree_id).first()
         if not service_conf:
             service_conf = stree_models.ServiceConf(service=service)
@@ -453,52 +423,157 @@ class ServiceConf(APIView):
 
 
 class ServiceEnvHost(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="read")])
     def get(self, request):
         tree_id = request.GET.get('tree_id')
         if not tree_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
-
         hosts = [
             service_env_host.host
-            for service_env_host in
-            stree_models.ServiceEnvHost.objects.filter(service_env__tree_node_id=tree_id)
+            for service_env_host in stree_models.ServiceEnvHost.objects.filter(service_env__tree_node_id=tree_id)
         ]
-
         data = hosts_serializers.HostSerializer(hosts, many=True).data
         return JsonResponse(dict(data=data))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")])
     def post(self, request):
         tree_id = request.data.get('tree_id')
         host_ids = request.data.get('hostIds')
-
         if not tree_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
-
         if not host_ids:
             return JsonResponse(data=dict(code=400, errors=[dict(type="hostIds不能为空")]), status=400)
 
         service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
         if not service_env:
             return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
-
         service_env_hosts = list()
         for host_id in host_ids:
-
             if not stree_models.ServiceEnvHost.objects.filter(service_env__tree_node__id=tree_id, host__id=host_id).exists():
                 service_env_host = stree_models.ServiceEnvHost(service_env=service_env,host_id=host_id)
                 service_env_hosts.append(service_env_host)
         stree_models.ServiceEnvHost.objects.bulk_create(service_env_hosts)
         return JsonResponse(dict(data='ok'))
 
-
     def delete(self, request):
         tree_id = request.data.get('tree_id')
         host_id = request.data.get('host_id')
         if not tree_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
-
         if not host_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="hostIds不能为空")]), status=400)
 
         stree_models.ServiceEnvHost.objects.filter(service_env__tree_node__id=tree_id, host__id=host_id).delete()
         return JsonResponse(dict(data='ok'))
+
+
+class ServiceBuild(APIView):
+    def get(self, request):
+        build_id = request.GET.get('id')
+        if build_id:
+            build_history = stree_models.BuildHistory.objects.filter(id=build_id).first()
+            data = stree_serializers.BuildHistorySerializer(build_history).data
+            return JsonResponse(dict(data=data))
+
+        tree_id = request.GET.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
+        if not service_env:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
+        build_historys = stree_models.BuildHistory.objects.filter(
+            service_env__tree_node_id=tree_id).order_by('-start_time')
+        data = stree_serializers.BuildHistorySerializer(build_historys, many=True).data
+        return JsonResponse(dict(data=data))
+
+    def post(self, request):
+        tree_id = request.data.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
+        if not service_env:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
+
+        print(service_env, service_env.service)
+        service_conf = stree_models.ServiceConf.objects.filter(service=service_env.service).first()
+        print(service_conf)
+        if not service_conf:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="服务配置不存在")]), status=400)
+
+        if not service_conf.build_command:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="服务没配置打包命令")]), status=400)
+
+        if not service_conf.git:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="配置仓库git地址")]), status=400)
+
+        start_time = datetime.datetime.now()
+        version = datetime.datetime.strftime(start_time, '%Y%m%d%H%M%S')
+        build_history = stree_models.BuildHistory(
+            service_env=service_env,
+            operator=request.USER.username,
+            build_cmd=service_conf.build_command,
+            start_time=start_time,
+            status="ING",
+            version=version,
+        )
+        build_history.save()
+
+        utils.BuildThread(build_history.id).start()
+        return JsonResponse(data=dict(data='ok'))
+
+
+class ServicePub(APIView):
+    def get(self, request):
+        build_id = request.GET.get('id')
+        if build_id:
+            build_history = stree_models.PubHistory.objects.filter(id=build_id).first()
+            data = stree_serializers.PubHistorySerializer(build_history).data
+            return JsonResponse(dict(data=data))
+
+        tree_id = request.GET.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
+        if not service_env:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
+        pub_historys = stree_models.PubHistory.objects.filter(
+            service_env__tree_node_id=tree_id).order_by('-start_time')
+        data = stree_serializers.PubHistorySerializer(pub_historys, many=True).data
+        return JsonResponse(dict(data=data))
+
+    def post(self, request):
+        tree_id = request.data.get('tree_id')
+        if not tree_id:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
+
+        service_env = stree_models.ServiceEnv.objects.filter(tree_node__id=tree_id).first()
+        if not service_env:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="环境不存在")]), status=400)
+
+        service_conf = stree_models.ServiceConf.objects.filter(service=service_env.service).first()
+        if not service_conf:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="服务配置不存在")]), status=400)
+
+        if not service_conf.start_command:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="服务没配置启动命令")]), status=400)
+
+        start_time = datetime.datetime.now()
+        version = datetime.datetime.strftime(start_time, '%Y%m%d%H%M%S')
+        pub_history = stree_models.PubHistory(
+            service_env=service_env,
+            operator=request.USER.username,
+            pub_cmd=service_conf.start_command,
+            start_time=start_time,
+            status="ING",
+            version=version,
+        )
+        pub_history.save()
+
+        utils.PubThread(pub_history.id).start()
+        return JsonResponse(data=dict(data='ok'))
+
+
+

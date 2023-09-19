@@ -2,6 +2,7 @@
   <div style='width: 30%; height: 100vh; margin:100px auto 0 auto'>
     <el-card >
       <div slot="header" style="text-align: left">
+        <h2 style="text-align: center"> 运维资产管理平台</h2>
         <span>
             登录
         </span>

@@ -1,9 +1,9 @@
 <template>
-  <div style="height: 100%; width: 100%;margin-top: 4px; margin-left: 4px; margin-right: 4px;position: relative; ">
-    <el-tabs style="height: 100%;; position: relative;" v-model="activeName" type="card" @tab-click="handleClick">
+  <div style="height: 100%; width: 100%; margin-top: 4px; margin-left: 4px; margin-right: 4px;position: relative; " class="streeDetail">
+    <el-tabs style="position: relative;" v-model="activeName" type="card" @tab-click="handleClick">
       <span>{{ TreeNodeTypeMap[$store.state.selectedNode.typ] }}: {{ $store.state.selectedNode.path }}</span>
 
-      <el-tab-pane  label="基本信息" name="basicInfo" style="height: 100%; margin-top: 15px">
+      <el-tab-pane  label="基本信息" name="basicInfo" style="margin-top: 15px">
         <div style="display: flex;justify-content: space-between">
 
           <el-card style="width: 100%;" shadow="never">
@@ -37,15 +37,17 @@
           </el-card>
         </div>
         <div style="display: flex; height: 100%;justify-content: space-between; margin-top: 10px; margin-bottom: 10px">
-          <el-card style="width: 100%; overflow-y: auto" class="overflowCard" shadow="never" v-if="$store.state.selectedNode.typ === 'service'">
+          <el-card style="width: 100%; overflow-y: auto" class="overflowCard" shadow="never" v-if="$store.state.selectedNode.typ === TreeNodeType.service || $store.state.selectedNode.typ === TreeNodeType.serviceEnv">
             <span style="display: flex; justify-content: space-between; margin-bottom: 20px">
               配置信息
-              <el-button size="mini" v-if="modifyServiceConf" @click="modifyServiceConf = false">修改</el-button>
-              <template  v-else>
-                <span>
-                  <el-button  size="mini"  @click="modifyServiceConf=fa">取消</el-button>
-                  <el-button type="primary" size="mini" @click="handleModifyServiceConf">确定</el-button>
-                </span>
+              <template v-if="$store.state.selectedNode.typ === TreeNodeType.service">
+                <el-button size="mini" v-if="modifyServiceConf" @click="modifyServiceConf = false">修改</el-button>
+                <template  v-else>
+                  <span>
+                    <el-button  size="mini"  @click="modifyServiceConf=fa">取消</el-button>
+                    <el-button type="primary" size="mini" @click="handleModifyServiceConf">确定</el-button>
+                  </span>
+                </template>
               </template>
             </span>
 
@@ -91,13 +93,58 @@
               <el-table-column label="操作">
                 <template slot-scope="scope">
                   <el-button typ="text" @click="handleDeleteServiceEnvHost(scope.row)" size="mini" type="text">解除关联</el-button>
+                  <el-button typ="text" @click="$router.push('/stree/terminal')" size="mini" type="text">登录</el-button>
+
                 </template>
               </el-table-column>
             </el-table>
           </el-card>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="打包发布" name="third">角色管理</el-tab-pane>
+      <el-tab-pane label="打包发布" v-if="$store.state.selectedNode.typ === TreeNodeType.serviceEnv" class="builPub" style="height: 100%; ">
+        <el-tabs tab-position="left" style="height: 100%;" @tab-click="clickBuildPubTab">
+          <el-tab-pane label="代码打包" >
+            <el-button style="float: right" :disabled="buildHistory.length !== 0 && buildHistory[0].status === 'ING'" type="primary" @click="handleBuild">打包</el-button>
+            <div style="background-color: #eeffb4; height: calc(100vh - 120px); float: left; width: 280px; padding: 4px; overflow-y: auto;">
+              <div :style="{backgroundColor: (selectBuildHistory.id === buildHistory.id? '#fffb1b': '#eeffb4')}" :key="buildHistory.id" v-for="buildHistory in buildHistory" class="buildHistory" @click="getBuildHistoryById(buildHistory)" style="height: 60px;border-top: #484f6c dashed 1px; padding: 5px; ">
+                <div style="display: flex; height: 30px; justify-content: space-between;;">
+                  <span style="height: 30px;line-height: 30px; display: inline-block" size="mini">版本:{{ buildHistory.version }}</span>
+                  <el-tag v-if="buildHistory.status ==='SUCCESS'" type="success" style="height: 30px;line-height: 30px; display: inline-block">成功</el-tag>
+                  <el-tag v-if="buildHistory.status ==='ING'" type="info" style="height: 30px;line-height: 30px; display: inline-block"><i class="el-icon-loading"></i>进行中</el-tag>
+                  <el-tag v-if="buildHistory.status ==='FAIL'" type="danger" style="height: 30px;line-height: 30px; display: inline-block">失败</el-tag>
+                </div>
+                操作人: <span style=" display: inline-block">{{ buildHistory.operator }}</span>
+              </div>
+            </div>
+            <i class="el-icon-loading" v-if="selectBuildHistory.status === 'ING'"></i>
+            <div style="height: calc(100vh - 120px); padding: 5px; overflow-y: scroll" v-html="selectBuildHistory.build_log.replaceAll('\n', '<br>')">
+
+            </div>
+
+          </el-tab-pane>
+          <el-tab-pane label="代码发布">
+            <el-button style="float: right" :disabled="pubHistorys.length !== 0 && pubHistorys[0].status === 'ING'" type="primary" @click="handlePub">发布</el-button>
+            <div style="background-color: #eeffb4; height: calc(100vh - 120px); float: left; width: 280px; padding: 4px; overflow-y: scroll">
+              <div :style="{backgroundColor: (selectPubHistory.id === pubHistory.id? '#fffb1b': '#eeffb4')}" :key="pubHistory.id" v-for="pubHistory in pubHistorys" class="buildHistory" @click="getPubHistoryById(pubHistory)" style="height: 60px;border-top: #484f6c dashed 1px; padding: 5px;">
+                <div style="display: flex; height: 30px; justify-content: space-between;;">
+                  <span style="height: 30px;line-height: 30px; display: inline-block" size="mini">版本:{{ pubHistory.version }}</span>
+                  <el-tag v-if="pubHistory.status ==='SUCCESS'" type="success" style="height: 30px;line-height: 30px; display: inline-block">成功</el-tag>
+                  <el-tag v-if="pubHistory.status ==='ING'" type="info" style="height: 30px;line-height: 30px; display: inline-block"><i class="el-icon-loading"></i>进行中</el-tag>
+                  <el-tag v-if="pubHistory.status ==='FAIL'" type="danger" style="height: 30px;line-height: 30px; display: inline-block">失败</el-tag>
+                </div>
+                操作人: <span style=" display: inline-block">{{ pubHistory.operator }}</span>
+              </div>
+            </div>
+            <i class="el-icon-loading" v-if="selectPubHistory.status === 'ING'"></i>
+            <div style="height: calc(100vh - 120px);padding-left: 5px; overflow-y: scroll" v-html="selectPubHistory.pub_log.replaceAll('\n', '<br>')">
+
+            </div>
+
+          </el-tab-pane>
+        </el-tabs>
+
+
+      </el-tab-pane>x
     </el-tabs>
     <el-dialog
       :visible.sync="addServiceEnvHostVisible"
@@ -127,7 +174,6 @@
       title="添加用户"
     >
       <el-form>
-
         <el-form-item label="用户">
           <el-select v-model="treeNodeRuleUserForm.user_ids" multiple>
             <el-option :key="option.id"
@@ -144,7 +190,6 @@
         <el-button @click="addTURDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="handleAddTUR" >确 定</el-button>
       </span>
-
     </el-dialog>
   </div>
 </template>
@@ -169,6 +214,7 @@ export default {
         hostIds: [],
         tree_id: ''
       },
+      buildHistory: [],
       serviceConfForm: {
         tree_id: '',
         git: '',
@@ -178,12 +224,20 @@ export default {
         start_command: '',
         build_command: ''
       },
+      TreeNodeType,
       serviceEnvHosts: [],
       modifyServiceConf: true,
       treeNodeRuleUserForm: {
         user_ids: [],
         tree_id: '',
         role_id: ''
+      },
+      selectBuildHistory:{
+        build_log:''
+      },
+      pubHistorys: [],
+      selectPubHistory:{
+        pub_log:''
       },
       TreeNodeTypeMap: TreeNodeTypeMap,
       emptyTreeNodeRuleUserForm: {
@@ -202,6 +256,7 @@ export default {
         }
         if (this.$store.state.selectedNode.typ === TreeNodeType.serviceEnv){
           this.getServiceEnvHost()
+          this.getBuildHistory()
         }
       },
       immediate:true
@@ -229,7 +284,7 @@ export default {
     },
     getServiceConf(){
       http.get('/api/v1/stree/service/conf', {params:{tree_id:this.$store.state.selectedNode.id}}).then((resp)=>{
-        this.serviceConf = resp.data
+        this.serviceConfForm = resp.data
       })
     },
     handleAddTURDialogOpen(row){
@@ -305,6 +360,90 @@ export default {
         });
       });
     },
+    handleBuild(){
+      http.post("/api/v1/stree/service/build",{tree_id: this.$store.state.selectedNode.id}).then(()=>{
+        this.getBuildHistory()
+      })
+    },
+    handlePub(){
+      http.post("/api/v1/stree/service/pub",{tree_id: this.$store.state.selectedNode.id}).then(()=>{
+        this.getPubHistory()
+      })
+    },
+    getBuildingLog(){
+      if (this.selectBuildHistory.status === 'ING'){
+        setTimeout(()=>{
+          this.getBuildHistoryById(this.selectBuildHistory)
+          this.getBuildingLog()
+        },1000)
+      }else{
+        this.getBuildHistory()
+      }
+    },
+    getPubingLog(){
+      if (this.selectPubHistory.status === 'ING'){
+        setTimeout(()=>{
+          this.getPubHistoryById(this.selectPubHistory)
+          this.getPubingLog()
+        },1000)
+      }else{
+        this.getPubHistory()
+      }
+    },
+    getBuildHistory(){
+      http.get("/api/v1/stree/service/build",{params:{tree_id: this.$store.state.selectedNode.id}}).then((resp)=>{
+        this.buildHistory = resp.data
+        if (this.buildHistory.length !== 0){
+          if (this.buildHistory[0].status === 'ING') {
+            this.selectBuildHistory = this.buildHistory[0]
+            this.getBuildingLog()
+          }
+        }
+      })
+    },
+    getBuildHistoryById(buildHistory){
+      http.get("/api/v1/stree/service/build",{params:{id:buildHistory.id}}).then((resp)=>{
+        let build_log = resp.data.build_log
+        if (build_log === null){
+          build_log = ''
+        }
+        build_log =  "打包开始时间：" + resp.data.start_time + "\n\n" +  buildHistory.status + '\n' + build_log + '\n\n'
+
+        resp.data.build_log = build_log
+        this.selectBuildHistory = resp.data
+      })
+    },
+    getPubHistory(){
+      http.get("/api/v1/stree/service/pub",{params:{tree_id: this.$store.state.selectedNode.id}}).then((resp)=>{
+        this.pubHistorys = resp.data
+        if (this.pubHistorys.length !== 0){
+          if (this.pubHistorys[0].status === 'ING') {
+            this.selectPubHistory = this.pubHistorys[0]
+            this.getPubingLog()
+          }
+        }
+      })
+    },
+    getPubHistoryById(pubHistory){
+      http.get("/api/v1/stree/service/pub",{params:{id:pubHistory.id}}).then((resp)=>{
+        let pub_log = resp.data.pub_log
+        if (pub_log === null){
+          pub_log = ''
+        }
+        pub_log =  "打包开始时间：" + resp.data.start_time + "\n\n" +  pubHistory.status + '\n' + pub_log + '\n\n'
+
+        resp.data.pub_log = pub_log
+        this.selectPubHistory = resp.data
+      })
+    },
+    clickBuildPubTab(tab){
+      if (tab.label === '代码打包'){
+        this.getBuildHistory()
+      }
+      if (tab.label === '代码发布'){
+        this.getPubHistory()
+      }
+    },
     getPermData(){
       if (this.$store.state.selectedNode.id === 0 || this.$store.state.selectedNode.id === TreeOperation.newNodeId){
         return
@@ -318,7 +457,7 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style  lang="scss">
 .el-form-item{
   margin: 0;
 }
@@ -343,13 +482,38 @@ li {
 
 
 }
+.buildHistory{
+  overflow-y: scroll !important;
+  &:hover{
+    background-color: #f9ff6e;
+  }
+}
+.streeDetail{
+  .el-tabs {
+    .el-tabs__content {
+        height: calc(100vh - 130px)!important;
+        overflow-y: scroll;
+
+    }
+  }
+}
+.builPub{
+  .el-tabs {
+    .el-tabs__content {
+        height: calc(100vh)!important;
+        //overflow-y: hidden;
+
+    }
+  }
+}
+
 a {
   color: #42b983;
 }
+
 .custom-tree-node{
   width: 100%;
 }
-.el-tabs{
-  height: 100% !important;
-}
+
+
 </style>

@@ -20,12 +20,14 @@ from stree import views
 
 
 urlpatterns = [
-    path('init/', views.Init.as_view()),
-    re_path(r'^children(/)?(?P<tree_id>\d+)?$', views.Children.as_view()),
-    path('children/move', views.ChildrenMove.as_view()),
+    path('init/', views.TreeNodeInit.as_view()),
+    re_path(r'^children(/)?(?P<tree_id>\d+)?$', views.TreeNodeChildren.as_view()),
+    path('children/move', views.TreeNodeMove.as_view()),
     path('node/detail', views.TreeNodeDetail.as_view()),
     path('node/perm', views.TreeNodePerm.as_view()),
     path('service/conf', views.ServiceConf.as_view()),
     path('service/env/host', views.ServiceEnvHost.as_view()),
+    path('service/build', views.ServiceBuild.as_view()),
+    path('service/pub', views.ServicePub.as_view()),
 
 ]

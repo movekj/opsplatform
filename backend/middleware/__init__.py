@@ -10,19 +10,20 @@ class JwtAuthMiddleware(MiddlewareMixin):
     def process_request(self, request):
         if request.path in Config.AUTH_WHITE_LIST:
             return
-        authorization = request.META.get('HTTP_AUTHORIZATION')
-        proto, token = authorization.split(' ')
-        if proto == "JWT":
-            try:
-                payload = api_settings.JWT_DECODE_HANDLER(token)
-                user = user_models.User.objects.filter(id=payload.get('user_id')).first()
-                if user:
-                    request.USER = user
-                    return
-                else:
-                    return JsonResponse(data=dict(code=401, error="用户不存在"), status=401)
-            except ExpiredSignature:
-                return JsonResponse(data=dict(code=401, error="token过期"), status=401)
-            except Exception as e:
-                return JsonResponse(data=dict(code=500, error=str(e)), status=500)
+        if request.META.get('HTTP_AUTHORIZATION'):
+            authorization = request.META.get('HTTP_AUTHORIZATION')
+            proto, token = authorization.split(' ')
+            if proto == "JWT":
+                try:
+                    payload = api_settings.JWT_DECODE_HANDLER(token)
+                    user = user_models.User.objects.filter(id=payload.get('user_id')).first()
+                    if user:
+                        request.USER = user
+                        return
+                    else:
+                        return JsonResponse(data=dict(code=404, error="用户不存在"), status=404)
+                except ExpiredSignature:
+                    return JsonResponse(data=dict(code=401, error="token过期"), status=401)
+                except Exception as e:
+                    return JsonResponse(data=dict(code=500, error=str(e)), status=500)
 

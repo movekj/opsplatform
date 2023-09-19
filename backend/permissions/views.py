@@ -2,7 +2,7 @@ from .forms import AddRoleForm, ModifyRoleForm, DeleteRoleForm, AddResourceForm,
     ModifyResourceForm, DeleteResourceForm, AddVerbForm, ModifyVerbForm, DeleteVerbForm
 from rest_framework.views import APIView
 from django.http.response import JsonResponse
-
+from utils import with_rbac_perms
 from permissions import models as permissions_models
 from permissions import serializers as permissions_serializers
 from django.db import transaction
@@ -12,6 +12,7 @@ from django.db import transaction
 
 
 class Role(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
     def get(self, request):
         role_id = request.GET.get("id")
         if role_id:
@@ -20,6 +21,7 @@ class Role(APIView):
         roles = permissions_models.Role.objects.all()
         return JsonResponse(dict(code=200, data=permissions_serializers.RoleSerializer(roles, many=True).data))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="post"), dict(ref="module.permissions", verb="write")])
     def post(self, request):
         form = AddRoleForm(request.data)
         if form.is_valid():
@@ -34,6 +36,7 @@ class Role(APIView):
             return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="post"), dict(ref="module.permissions", verb="write")])
     def put(self, request):
         form = ModifyRoleForm(request.data)
         if form.is_valid():
@@ -48,6 +51,7 @@ class Role(APIView):
             role.save()
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="post"), dict(ref="module.permissions", verb="write")])
     def delete(self, request):
         form = DeleteRoleForm(request.data)
         if form.is_valid():
@@ -62,6 +66,7 @@ class Role(APIView):
 
 
 class Resource(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
     def get(self, request):
         resource_id = request.GET.get("id")
         if resource_id:
@@ -70,6 +75,7 @@ class Resource(APIView):
         roles = permissions_models.Resource.objects.all()
         return JsonResponse(dict(code=200, data=permissions_serializers.ResourceSerializer(roles, many=True).data))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="post"), dict(ref="module.permissions", verb="write")])
     def post(self, request):
         form = AddResourceForm(request.data)
         if form.is_valid():
@@ -84,6 +90,7 @@ class Resource(APIView):
             return JsonResponse(dict(code=200, data='ok'))
         return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="put"), dict(ref="module.permissions", verb="write")])
     def put(self, request):
         form = ModifyResourceForm(request.data)
         if form.is_valid():
@@ -98,6 +105,7 @@ class Resource(APIView):
             resource.save()
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def delete(self, request):
         form = DeleteResourceForm(request.data)
         if form.is_valid():
@@ -112,6 +120,7 @@ class Resource(APIView):
 
 
 class Verb(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
     def get(self, request):
         verb_id = request.GET.get("id")
         if verb_id:
@@ -120,6 +129,7 @@ class Verb(APIView):
         verbs = permissions_models.Verb.objects.all()
         return JsonResponse(dict(code=200, data=permissions_serializers.VerbSerializer(verbs, many=True).data))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def post(self, request):
         form = AddRoleForm(request.data)
         if form.is_valid():
@@ -131,7 +141,7 @@ class Verb(APIView):
             permissions_models.Verb(name=name).save()
             return JsonResponse(dict(code=200, data='ok'))
         return JsonResponse(data=dict(code=400, errors=form.errors), status=400)
-
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def put(self, request):
         form = ModifyVerbForm(request.data)
         if form.is_valid():
@@ -146,6 +156,7 @@ class Verb(APIView):
             verb.save()
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def delete(self, request):
         form = DeleteVerbForm(request.data)
         if form.is_valid():
@@ -160,6 +171,7 @@ class Verb(APIView):
 
 
 class RoleRule(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="get"), dict(ref="module.permissions", verb="read")])
     def get(self, request):
         role_id = request.GET.get("id")
         errors = dict()
@@ -178,6 +190,7 @@ class RoleRule(APIView):
             data.append(resource)
         return JsonResponse(dict(code=200, data=data))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def post(self, request):
         resource_id = request.data.get("resourceId")
         errors = dict()
@@ -227,6 +240,7 @@ class RoleRule(APIView):
             permissions_models.RoleRuleVerb.objects.bulk_create(role_rule_verbs)
         return JsonResponse(dict(code=200, data='ok'))
 
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def delete(self, request):
         role_id = request.data.get('role_id')
         resource_id = request.data.get('resource_id')
@@ -253,6 +267,7 @@ class RoleRule(APIView):
 
 
 class RoleRuleVerb(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.permissions", verb="delete"), dict(ref="module.permissions", verb="write")])
     def delete(self, request):
         role_id = request.data.get('role_id')
         verb_id = request.data.get('verb_id')

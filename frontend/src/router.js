@@ -5,19 +5,25 @@ import User from './components/User.vue'
 import Verb from './components/Verb.vue'
 import Role from "@/components/Role.vue";
 import Stree from './components/Stree.vue'
+import StreeDetail from './components/StreeDetail.vue'
+
 import Login from './components/Login.vue'
 import RoleRule from "@/components/RoleRule.vue";
 
 import Resource from "@/components/Resource.vue";
 import Dashboard from './components/Dashboard.vue'
 import Permission from './components/Permission.vue'
+import WebTerminal from './components/WebTerninal.vue'
 
 
 
 const routes = [
   { path: '/', component: Dashboard,
     children: [
-      { path: '/stree', component: Stree },
+      { path: '/stree', component: Stree, children: [
+        { path: '/stree/detail', component: StreeDetail},
+        { path: '/stree/terminal', component: WebTerminal}
+      ]},
       { path: '/permissionManage', component: Permission,
         children:[
           { path: '/permissionManage/role', component: Role,

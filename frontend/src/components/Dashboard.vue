@@ -10,7 +10,7 @@
         router
     >
 
-      <el-menu-item index="/stree" v-if='HasPerm($store.state.rbac, [{ref:"module.stree",verb:"read"}])'>服务树</el-menu-item>
+      <el-menu-item index="/stree/detail" v-if='HasPerm($store.state.rbac, [{ref:"module.stree",verb:"read"}])'>服务树</el-menu-item>
       <el-menu-item index="/hostManage" v-if='HasPerm($store.state.rbac, [{ref:"module.hosts",verb:"read"}])'>主机管理</el-menu-item>
       <el-menu-item index="/permissionManage/role" v-if='HasPerm($store.state.rbac, [{ref:"module.permissions",verb:"read"}])'>权限管理</el-menu-item>
       <el-menu-item index="/userManage" v-if='HasPerm($store.state.rbac, [{ref:"module.users",verb:"read"}])'>用户管理</el-menu-item>

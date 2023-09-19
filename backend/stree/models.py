@@ -72,3 +72,31 @@ class ServiceEnvHost(models.Model):
 
     def __str__(self):
         return self.service_env.name + " (" + self.host.name + ")"
+
+
+class BuildHistory(models.Model):
+    service_env = models.ForeignKey(ServiceEnv, on_delete=models.CASCADE)
+    version = models.CharField(max_length=128)
+    build_log = models.TextField(null=True)
+    build_cmd = models.TextField()
+    start_time = models.DateTimeField()
+    stop_time = models.DateTimeField(null=True)
+    status = models.CharField(max_length=128)
+    operator = models.CharField(max_length=128)
+
+    def __str__(self):
+        return self.service_env.name + " (" + self.version + ")"
+
+
+class PubHistory(models.Model):
+    service_env = models.ForeignKey(ServiceEnv, on_delete=models.CASCADE)
+    version = models.CharField(max_length=128)
+    pub_log = models.TextField(null=True)
+    pub_cmd = models.TextField()
+    start_time = models.DateTimeField()
+    stop_time = models.DateTimeField(null=True)
+    status = models.CharField(max_length=128)
+    operator = models.CharField(max_length=128)
+
+    def __str__(self):
+        return self.service_env.name + " (" + self.version + ")"

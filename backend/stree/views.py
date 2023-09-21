@@ -7,7 +7,7 @@ from permissions import models as permissions_models
 from hosts import serializers as hosts_serializers
 from hosts import models as hosts_models
 import datetime
-from utils import with_rbac_perms
+from utils import with_rbac_perms, get_parent_tree_node_paths
 
 
 from users import models as users_models
@@ -267,18 +267,21 @@ class TreeNodeDetail(APIView):
 
 
 class TreeNodePerm(APIView):
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="post"), dict(ref="module.stree", verb="write"), dict(ref="api.stree.perm", verb="post")])
     def post(self, request):
         tree_id = request.data.get('tree_id')
         if not tree_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
 
-        if not with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")]) and \
-             not stree_models.TreeUserRole.objects.filter(role__name="rd_admin", user__id=request.USER.id, tree_node_id=tree_id):
-            return JsonResponse(data=dict(code=403, error='没有权限'), status=403)
-
         tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
         if not tree_node:
             return JsonResponse(data=dict(code=400, errors=[dict(type="节点不存在")]), status=400)
+
+        all_parent_tree_nodes = stree_models.TreeNode.objects.filter(path__in=get_parent_tree_node_paths(tree_node.path))
+
+        if not stree_models.TreeUserRole.objects.filter(role__name="rd_admin", user__id=request.USER.id,
+                    tree_node__in=all_parent_tree_nodes) and not with_rbac_perms(dict(ref="module.stree", verb="write")):
+            return JsonResponse(data=dict(code=403, error='没有权限'), status=403)
 
         role_id = request.data.get('role_id')
         if not role_id:
@@ -306,14 +309,19 @@ class TreeNodePerm(APIView):
         stree_models.TreeUserRole.objects.bulk_create(turs)
         return JsonResponse(dict(data="ok"))
 
+    @with_rbac_perms(perms=[dict(ref="api.stree", verb="post"), dict(ref="module.stree", verb="write"), dict(ref="api.stree.perm", verb="post")])
     def delete(self, request):
         tree_id = request.data.get('tree_id')
         if not tree_id:
             return JsonResponse(data=dict(code=400, errors=[dict(type="tree_id不能为空")]), status=400)
 
-        if not with_rbac_perms(perms=[dict(ref="api.stree", verb="get"), dict(ref="module.stree", verb="write")]) and \
-                not stree_models.TreeUserRole.objects.filter(role__name="rd_admin", user__id=request.USER.id,
-                                                             tree_node_id=tree_id):
+        tree_node = stree_models.TreeNode.objects.filter(id=tree_id).first()
+        if not tree_node:
+            return JsonResponse(data=dict(code=400, errors=[dict(type="节点不存在")]), status=400)
+
+        all_parent_tree_nodes = stree_models.TreeNode.objects.filter(path__in=get_parent_tree_node_paths(tree_node.path))
+        if not stree_models.TreeUserRole.objects.filter(role__name="rd_admin", user__id=request.USER.id,
+                    tree_node__in=all_parent_tree_nodes) and not with_rbac_perms(dict(ref="module.stree", verb="write")):
             return JsonResponse(data=dict(code=403, error='没有权限'), status=403)
 
         role_id = request.data.get('role_id')

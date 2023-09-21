@@ -47,7 +47,6 @@
         <el-form-item label="类型" prop="type">
           <el-radio-group v-model="resourceForm.type" :disabled="opType === 'edit'">
             <el-radio-button label="module"></el-radio-button>
-            <el-radio-button label="menu"></el-radio-button>
             <el-radio-button label="api"></el-radio-button>
           </el-radio-group>
         </el-form-item>

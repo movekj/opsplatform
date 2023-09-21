@@ -50,6 +50,15 @@ def get_parent_tree_node(path):
     parent_path = '.'.join(path.split(".")[:-1])
     return tree_models.TreeNode.objects.filter(path=parent_path).first()
 
+def get_parent_tree_node_paths(path):
+    path_slices = path.split(".")
+    parent_paths = list()
+    cache = list()
+    for path_slice in path_slices:
+        cache.append(path_slice)
+        parent_paths.append('.'.join(cache))
+    return parent_paths
+
 
 class BuildThread(Thread):
     def __init__(self, history_id):

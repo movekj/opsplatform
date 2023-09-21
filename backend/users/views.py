@@ -16,7 +16,7 @@ from rest_framework_jwt.settings import api_settings
 # Create your views here.
 
 class Users(APIView):
-    # @with_rbac_perms(perms=[dict(ref="api.users", verb="get"), dict(ref="module.users", verb="read")])
+    @with_rbac_perms(perms=[dict(ref="api.users", verb="get"), dict(ref="module.users", verb="read")])
     def get(self, request):
         user_id = request.GET.get("id")
 

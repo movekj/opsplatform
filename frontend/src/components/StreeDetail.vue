@@ -93,7 +93,7 @@
               <el-table-column label="操作">
                 <template slot-scope="scope">
                   <el-button typ="text" @click="handleDeleteServiceEnvHost(scope.row)" size="mini" type="text">解除关联</el-button>
-                  <el-button typ="text" @click="$router.push({path: '/stree/terminal', query: {host_id: scope.row.id}})" size="mini" type="text">登录</el-button>
+                  <el-button typ="text" :disabled="disableHostLoginBtn" @click="$router.push({path: '/stree/terminal', query: {host_id: scope.row.id}})" size="mini" type="text">登录</el-button>
 
                 </template>
               </el-table-column>
@@ -203,18 +203,26 @@ export default {
   name: 'StreeDetailCp',
   computed: {
 
-     showAddTreeRoleUserBtb(){
-       return (role_name) =>{
+     showAddTreeRoleUserBtb() {
+       return (role_name) => {
 
-         if (this.permData.rd_admin !== undefined && this.permData.rd_admin.indexOf(this.$store.state.userinfo.cname) !== -1 && (role_name === "rd" || role_name === "rd_admin")){
+         if (this.permData.rd_admin !== undefined && this.permData.rd_admin.indexOf(this.$store.state.userinfo.cname) !== -1 && (role_name === "rd" || role_name === "rd_admin")) {
            return true
          }
-         if (utils.HasPerm(this.$store.state.userinfo.rbac, [{ref: "module.stree", verb: "write"}])){
+         if (utils.HasPerm(this.$store.state.userinfo.rbac, [{ref: "module.stree", verb: "write"}])) {
            return true
          }
          return false
        }
-
+     },
+    disableHostLoginBtn(){
+       if (this.permData.rd_admin !== undefined && this.permData.rd_admin.indexOf(this.$store.state.userinfo.cname) !== -1){
+         return false
+       }
+       if (utils.HasPerm(this.$store.state.userinfo.rbac, [{ref: "module.stree", verb: "write"}])) {
+          return  false
+       }
+       return true
     }
   },
 

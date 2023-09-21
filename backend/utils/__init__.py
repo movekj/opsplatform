@@ -65,7 +65,7 @@ class BuildThread(Thread):
             build_history.stop_time = datetime.datetime.now()
             build_history.save()
 
-        if not service_conf.start_command:
+        if not service_conf.build_command:
             build_history.build_log += "服务没有配置构建命令"
             build_history.status = "FAIL"
             build_history.stop_time = datetime.datetime.now()
@@ -83,7 +83,7 @@ class BuildThread(Thread):
 
                 ssh.connect(hostname=service_env_host.host.ip, username=service_env_host.host.username, password=service_env_host.host.password)
                 channel = ssh.get_transport().open_session()
-                channel.exec_command(service_conf.start_command)
+                channel.exec_command(service_conf.build_command)
 
                 while True:
 

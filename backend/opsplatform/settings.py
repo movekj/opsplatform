@@ -95,6 +95,7 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# path: opsplatform/settings.py
 DATABASES = {
     'default': {
         "ENGINE": "django.db.backends.mysql",

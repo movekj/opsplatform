@@ -22,14 +22,14 @@
                         {{ user.cname }}
                         <span
                           class="link-type"
-                          v-if=" user.readonly != 1"
+                          v-if="user.readonly != 1 && showAddTreeRoleUserBtb(scope.row.name)"
                           @click="handleDeleteTURD(scope.row, user)"
                           ><i class="el-icon-delete"></i
                         ></span>
                         ]
                       </span>
                     </span>
-                    <i class="el-icon-plus" @click="handleAddTURDialogOpen(scope.row)"></i>
+                    <i class="el-icon-plus" v-if="showAddTreeRoleUserBtb(scope.row.name)"  @click="handleAddTURDialogOpen(scope.row)"></i>
                   </div>
                 </template>
               </el-table-column>
@@ -44,7 +44,7 @@
                 <el-button size="mini" v-if="modifyServiceConf" @click="modifyServiceConf = false">修改</el-button>
                 <template  v-else>
                   <span>
-                    <el-button  size="mini"  @click="modifyServiceConf=fa">取消</el-button>
+                    <el-button  size="mini"  @click="modifyServiceConf=false">取消</el-button>
                     <el-button type="primary" size="mini" @click="handleModifyServiceConf">确定</el-button>
                   </span>
                 </template>
@@ -114,6 +114,7 @@
                   <el-tag v-if="buildHistory.status ==='FAIL'" type="danger" style="height: 30px;line-height: 30px; display: inline-block">失败</el-tag>
                 </div>
                 操作人: <span style=" display: inline-block">{{ buildHistory.operator }}</span>
+
               </div>
             </div>
             <i class="el-icon-loading" v-if="selectBuildHistory.status === 'ING'"></i>
@@ -195,11 +196,26 @@
 </template>
 <script>
 import http from '@/api'
+import utils from "@/utils"
 import {TreeOperation,  TreeNodeType, TreeNodeTypeMap} from "@/const"
 
 export default {
   name: 'StreeDetailCp',
   computed: {
+
+     showAddTreeRoleUserBtb(){
+       return (role_name) =>{
+
+         if (this.permData.rd_admin !== undefined && this.permData.rd_admin.indexOf(this.$store.state.userinfo.cname) !== -1 && (role_name === "rd" || role_name === "rd_admin")){
+           return true
+         }
+         if (utils.HasPerm(this.$store.state.userinfo.rbac, [{ref: "module.stree", verb: "write"}])){
+           return true
+         }
+         return false
+       }
+
+    }
   },
 
   data(){
@@ -262,6 +278,7 @@ export default {
       immediate:true
     }
   },
+
   methods:{
     handleClick(){
 

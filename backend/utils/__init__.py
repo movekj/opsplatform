@@ -216,9 +216,9 @@ class PubThread(Thread):
                     pass
                 else:
                     pub_hsitory.status = "FAIL"
-                pub_hsitory.stop_time = datetime.datetime.now()
-                pub_hsitory.save()
-                return
+                    pub_hsitory.stop_time = datetime.datetime.now()
+                    pub_hsitory.save()
+                    return
             except Exception as e:
                 pub_hsitory.pub_log += str(e)
                 pub_hsitory.status = "FAIL"

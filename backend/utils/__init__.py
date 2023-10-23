@@ -144,8 +144,8 @@ class BuildThread(Thread):
             build_history.build_log += "结束时间: %s\n" % build_history.stop_time.strftime("%Y-%m-%d %H:%M:%SZ")
             build_history.save()
             ssh.close()
-        pub_hsitory.status = "SUCCESS"
-        pub_hsitory.save()
+        build_history.status = "SUCCESS"
+        build_history.save()
 
 class PubThread(Thread):
     def __init__(self, history_id):

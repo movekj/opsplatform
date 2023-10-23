@@ -126,7 +126,7 @@ class BuildThread(Thread):
                     build_history.save()
 
                 if channel.recv_exit_status() == 0:
-                    build_history.status = "SUCCESS"
+                    pass
                 else:
                     build_history.status = "FAIL"
                 build_history.stop_time = datetime.datetime.now()
@@ -140,7 +140,8 @@ class BuildThread(Thread):
             build_history.build_log += "结束时间: %s\n" % build_history.stop_time.strftime("%Y-%m-%d %H:%M:%SZ")
             build_history.save()
             ssh.close()
-
+        pub_hsitory.status = "SUCCESS"
+        pub_hsitory.save()
 
 class PubThread(Thread):
     def __init__(self, history_id):
@@ -205,9 +206,8 @@ class PubThread(Thread):
                 if line:
                     pub_hsitory.pub_log += line
                     pub_hsitory.save()
-
                 if channel.recv_exit_status() == 0:
-                    pub_hsitory.status = "SUCCESS"
+                    pass
                 else:
                     pub_hsitory.status = "FAIL"
                 pub_hsitory.stop_time = datetime.datetime.now()
@@ -223,6 +223,8 @@ class PubThread(Thread):
             pub_hsitory.pub_log += "结束时间:  %s\n" % pub_hsitory.stop_time.strftime("%Y-%m-%d %H:%M:%SZ")
             pub_hsitory.save()
             ssh.close()
+        pub_hsitory.status = "SUCCESS"
+        pub_hsitory.save()
 
 
 

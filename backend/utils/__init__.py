@@ -141,7 +141,7 @@ class BuildThread(Thread):
             finally:
                 ssh.close()
             build_history.build_log += "结束在服务器[%s@%s]上的构建操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
-            build_history.build_log += "结束时间: %s\n" % build_history.stop_time.strftime("%Y-%m-%d %H:%M:%SZ")
+            build_history.build_log += "结束时间: %s\n" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ")
             build_history.save()
             ssh.close()
         build_history.status = "SUCCESS"
@@ -228,7 +228,7 @@ class PubThread(Thread):
             finally:
                 ssh.close()
             pub_hsitory.pub_log += "结束在服务器[%s@%s]的发布操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
-            pub_hsitory.pub_log += "结束时间:  %s\n" % pub_hsitory.stop_time.strftime("%Y-%m-%d %H:%M:%SZ")
+            pub_hsitory.pub_log += "结束时间:  %s\n" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%SZ")
             pub_hsitory.save()
             ssh.close()
         pub_hsitory.status = "SUCCESS"

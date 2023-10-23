@@ -73,12 +73,14 @@ class BuildThread(Thread):
             build_history.status = "FAIL"
             build_history.stop_time = datetime.datetime.now()
             build_history.save()
+            return
 
         if not service_conf.build_command:
             build_history.build_log += "服务没有配置构建命令"
             build_history.status = "FAIL"
             build_history.stop_time = datetime.datetime.now()
             build_history.save()
+            return
 
         if build_history.build_log is None:
             build_history.build_log = ''
@@ -129,11 +131,13 @@ class BuildThread(Thread):
                     pass
                 else:
                     build_history.status = "FAIL"
-                build_history.stop_time = datetime.datetime.now()
+                    build_history.stop_time = datetime.datetime.now()
+                    return
             except Exception as e:
                 build_history.build_log += str(e)
                 build_history.status = "FAIL"
                 build_history.stop_time = datetime.datetime.now()
+                return 
             finally:
                 ssh.close()
             build_history.build_log += "结束在服务器[%s@%s]上的构建操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
@@ -156,12 +160,14 @@ class PubThread(Thread):
             pub_hsitory.status = "FAIL"
             pub_hsitory.stop_time = datetime.datetime.now()
             pub_hsitory.save()
+            return
 
         if not service_conf.start_command:
             pub_hsitory.pub_log += "服务没有配置启动命令"
             pub_hsitory.status = "FAIL"
             pub_hsitory.stop_time = datetime.datetime.now()
             pub_hsitory.save()
+            return
 
         if pub_hsitory.pub_log is None:
             pub_hsitory.pub_log = ''
@@ -212,11 +218,13 @@ class PubThread(Thread):
                     pub_hsitory.status = "FAIL"
                 pub_hsitory.stop_time = datetime.datetime.now()
                 pub_hsitory.save()
+                return
             except Exception as e:
                 pub_hsitory.pub_log += str(e)
                 pub_hsitory.status = "FAIL"
                 pub_hsitory.stop_time = datetime.datetime.now()
                 pub_hsitory.save()
+                return
             finally:
                 ssh.close()
             pub_hsitory.pub_log += "结束在服务器[%s@%s]的发布操作\n" %(service_env_host.host.ip,service_env_host.host.hostname)
